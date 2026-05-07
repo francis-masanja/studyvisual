@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { db } from './db';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let userId;
     if (userResult.rows.length === 0) {
-      userId = uuidv4();
+      userId = randomUUID();
       await db.execute({
         sql: "INSERT INTO users (id, username) VALUES (?, ?)",
         args: [userId, username]
@@ -32,15 +32,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Insert material
-    const materialId = uuidv4();
+    const materialId = randomUUID();
     await db.execute({
       sql: "INSERT INTO materials (id, user_id, title, type, content_json) VALUES (?, ?, ?, ?, ?)",
       args: [materialId, userId, title, type, JSON.stringify(content_json)]
     });
 
     return res.status(200).json({ success: true, materialId });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Internal server error', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+    });
   }
 }

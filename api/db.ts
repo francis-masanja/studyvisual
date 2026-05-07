@@ -1,11 +1,11 @@
-import { createClient, type Client } from '@libsql/client';
+import { createClient, type Client } from '@libsql/client/web';
 
 let _db: Client | null = null;
 
 export const getDb = () => {
   if (!_db) {
-    const url = process.env.VITE_TURSO_URL || process.env.TURSO_DATABASE_URL || '';
-    const authToken = process.env.VITE_TURSOR_API_KEY || process.env.TURSO_AUTH_TOKEN || '';
+    const url = (process.env.VITE_TURSO_URL || process.env.TURSO_DATABASE_URL || '').trim();
+    const authToken = (process.env.VITE_TURSOR_API_KEY || process.env.TURSO_AUTH_TOKEN || '').trim();
 
     if (!url) {
       console.error("❌ ERROR: VITE_TURSO_URL is missing. DB operations will fail.");
@@ -15,10 +15,15 @@ export const getDb = () => {
       } as any;
     }
 
-    _db = createClient({
-      url,
-      authToken,
-    });
+    try {
+      _db = createClient({
+        url,
+        authToken,
+      });
+    } catch (e: any) {
+      console.error("❌ CRITICAL: Failed to create Libsql client", e);
+      throw new Error(`Libsql Client Creation Failed: ${e.message}`);
+    }
   }
   return _db;
 };
