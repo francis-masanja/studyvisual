@@ -147,7 +147,7 @@ const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
         </div>
       </div>
 
-      <div className="relative w-full max-w-lg aspect-[4/3] perspective-1000">
+      <div className="relative w-full max-w-2xl aspect-video md:aspect-[16/9] perspective-1000">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -162,16 +162,16 @@ const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
               transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
               onClick={() => setIsFlipped(!isFlipped)}
             >
-              <div className="absolute inset-0 backface-hidden bg-white rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center shadow-xl border border-cozy-secondary/20">
+              <div className="absolute inset-0 backface-hidden bg-white rounded-[2.5rem] p-8 md:p-12 flex flex-col items-start justify-center text-left shadow-xl border border-cozy-secondary/20 overflow-y-auto">
                 <span className="text-xs font-bold uppercase tracking-widest text-cozy-muted mb-4">Question</span>
-                <p className="text-3xl font-bold leading-tight">{card.question}</p>
-                <p className="mt-8 text-sm text-cozy-muted italic">Click to reveal answer</p>
+                <p className="text-xl md:text-2xl font-bold leading-tight text-cozy-text">{card.question}</p>
+                <p className="mt-auto pt-4 text-xs text-cozy-muted italic w-full text-center">Click to reveal answer</p>
               </div>
 
-              <div className="absolute inset-0 backface-hidden bg-cozy-primary rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center shadow-xl border border-cozy-primary rotate-y-180 text-white">
+              <div className="absolute inset-0 backface-hidden bg-cozy-primary rounded-[2.5rem] p-8 md:p-12 flex flex-col items-start justify-center text-left shadow-xl border border-cozy-primary rotate-y-180 text-white overflow-y-auto">
                 <span className="text-xs font-bold uppercase tracking-widest opacity-70 mb-4">Answer</span>
-                <p className="text-2xl font-medium leading-relaxed">{card.answer}</p>
-                <p className="mt-8 text-sm opacity-70 italic">Click to flip back</p>
+                <p className="text-lg md:text-xl font-medium leading-relaxed">{card.answer}</p>
+                <p className="mt-auto pt-4 text-xs opacity-70 italic w-full text-center">Click to flip back</p>
               </div>
             </motion.div>
           </motion.div>

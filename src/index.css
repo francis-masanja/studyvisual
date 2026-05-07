@@ -3,28 +3,60 @@
 :root {
   --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   
-  /* Cozy Theme Variables */
-  --cozy-bg: #faf7f2;
-  --cozy-text: #4a3f35;
-  --cozy-primary: #8d7b68;
-  --cozy-secondary: #c8b6a6;
-  --cozy-accent: #f8ede3;
-  --cozy-muted: #a4907c;
+  /* Default Cozy Theme (Warm/Cream) */
+  --bg: #faf7f2;
+  --text: #4a3f35;
+  --primary: #8d7b68;
+  --secondary: #c8b6a6;
+  --accent: #f8ede3;
+  --muted: #a4907c;
+  --card-bg: #ffffff;
+}
+
+[data-theme='dark'] {
+  --bg: #1a1a1a;
+  --text: #e0e0e0;
+  --primary: #a4907c;
+  --secondary: #3d3d3d;
+  --accent: #2d2d2d;
+  --muted: #888888;
+  --card-bg: #262626;
+}
+
+[data-theme='blue'] {
+  --bg: #f0f4f8;
+  --text: #243b53;
+  --primary: #486581;
+  --secondary: #9fb3c8;
+  --accent: #d9e2ec;
+  --muted: #627d98;
+  --card-bg: #ffffff;
+}
+
+[data-theme='red'] {
+  --bg: #fdf2f2;
+  --text: #771d1d;
+  --primary: #9b2c2c;
+  --secondary: #fbd3d3;
+  --accent: #fff5f5;
+  --muted: #c53030;
+  --card-bg: #ffffff;
 }
 
 @theme {
-  --color-cozy-bg: var(--cozy-bg);
-  --color-cozy-text: var(--cozy-text);
-  --color-cozy-primary: var(--cozy-primary);
-  --color-cozy-secondary: var(--cozy-secondary);
-  --color-cozy-accent: var(--cozy-accent);
-  --color-cozy-muted: var(--cozy-muted);
+  --color-cozy-bg: var(--bg);
+  --color-cozy-text: var(--text);
+  --color-cozy-primary: var(--primary);
+  --color-cozy-secondary: var(--secondary);
+  --color-cozy-accent: var(--accent);
+  --color-cozy-muted: var(--muted);
 }
 
 body {
-  background-color: var(--cozy-bg);
-  color: var(--cozy-text);
+  background-color: var(--bg);
+  color: var(--text);
   font-family: var(--font-family);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @layer utilities {
@@ -40,4 +72,11 @@ body {
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+}
+
+.prose-cozy {
+  color: var(--text);
+}
+.prose-cozy h1, .prose-cozy h2, .prose-cozy h3 {
+  color: var(--primary);
 }

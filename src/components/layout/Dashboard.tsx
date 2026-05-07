@@ -123,8 +123,16 @@ const Dashboard = () => {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <SidebarItem icon={<LayoutGrid size={20} />} label="My Library" active />
-          <SidebarItem icon={<Settings size={20} />} label="Settings" />
+          <SidebarItem 
+            icon={<LayoutGrid size={20} />} 
+            label="My Library" 
+            active 
+          />
+          <SidebarItem 
+            icon={<Settings size={20} />} 
+            label="Settings" 
+            onClick={() => navigate('/settings')}
+          />
         </nav>
 
         <div className="p-4 border-t border-cozy-secondary/20">
@@ -243,11 +251,14 @@ const Dashboard = () => {
   );
 };
 
-const SidebarItem = ({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) => (
-  <div className={cn(
-    "flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer",
-    active ? "bg-cozy-primary text-white shadow-md" : "text-cozy-muted hover:bg-cozy-accent hover:text-cozy-text"
-  )}>
+const SidebarItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }) => (
+  <div 
+    onClick={onClick}
+    className={cn(
+      "flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer",
+      active ? "bg-cozy-primary text-white shadow-md" : "text-cozy-muted hover:bg-cozy-accent hover:text-cozy-text"
+    )}
+  >
     {icon}
     <span className="font-medium">{label}</span>
   </div>
