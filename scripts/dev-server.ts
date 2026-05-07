@@ -3,9 +3,9 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import uploadHandler from '../api/upload';
-import materialsHandler from '../api/materials';
-import materialHandler from '../api/material';
+import uploadHandler from '../api/upload.js';
+import materialsHandler from '../api/materials.js';
+import materialHandler from '../api/material.js';
 
 const app = express();
 app.use(cors());

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db';
+import { db } from './db.js';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   const rawUrl = process.env.VITE_TURSO_URL || process.env.TURSO_DATABASE_URL || '';

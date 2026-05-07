@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db';
+import { db } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("Materials handler started");
