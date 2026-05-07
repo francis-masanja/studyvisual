@@ -46,9 +46,20 @@ const Dashboard = () => {
         return;
       }
 
-      const data = JSON.parse(text);
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse JSON response:", text);
+        alert("The server returned an invalid response. This usually means a configuration error on Vercel.");
+        return;
+      }
+
       if (data.materials) {
         setMaterials(data.materials);
+      } else if (data.error) {
+        console.error("API returned error:", data.error, data.message);
+        alert(`API Error: ${data.message || data.error}`);
       }
     } catch (error) {
       console.error("Error fetching materials:", error);
