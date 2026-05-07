@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, BookOpen, Layers, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
-import type { StudyMaterial, StudyDocument, StudyFlashcards } from '../../lib/parser';
+import * as Tabs from '@radix-ui/react-tabs';
+import type { StudyMaterial, StudySection, StudyFlashcard } from '../../lib/parser';
 
 const StudyVisualizer = () => {
   const { id } = useParams();
@@ -31,34 +32,60 @@ const StudyVisualizer = () => {
   if (isLoading) return <div className="min-h-screen bg-cozy-bg flex items-center justify-center">Loading...</div>;
   if (!material) return <div className="min-h-screen bg-cozy-bg flex items-center justify-center">Material not found.</div>;
 
+  const hasSections = material.sections && material.sections.length > 0;
+  const hasCards = material.cards && material.cards.length > 0;
+
   return (
     <div className="min-h-screen bg-cozy-bg text-cozy-text flex flex-col">
-      <header className="p-4 border-b border-cozy-secondary/20 bg-white flex justify-between items-center sticky top-0 z-10">
+      <header className="p-4 border-b border-cozy-secondary/20 bg-white flex justify-between items-center sticky top-0 z-50">
         <button 
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-cozy-muted hover:text-cozy-text transition-colors"
         >
-          <ArrowLeft size={20} /> Back to Library
+          <ArrowLeft size={20} /> Back
         </button>
         <h1 className="font-bold text-lg truncate max-w-xs">{material.title}</h1>
-        <div className="w-24" /> {/* Spacer */}
+        <div className="w-24" />
       </header>
 
       <main className="flex-1 flex flex-col">
-        {material.type === 'document' ? (
-          <DocumentView material={material} />
+        {material.type === 'mixed' ? (
+          <Tabs.Root defaultValue="document" className="flex-1 flex flex-col">
+            <Tabs.List className="flex justify-center gap-8 p-4 bg-white border-b border-cozy-secondary/10">
+              <Tabs.Trigger 
+                value="document"
+                className="pb-2 px-4 font-bold text-cozy-muted data-[state=active]:text-cozy-primary data-[state=active]:border-b-2 data-[state=active]:border-cozy-primary transition-all"
+              >
+                Document
+              </Tabs.Trigger>
+              <Tabs.Trigger 
+                value="flashcards"
+                className="pb-2 px-4 font-bold text-cozy-muted data-[state=active]:text-cozy-primary data-[state=active]:border-b-2 data-[state=active]:border-cozy-primary transition-all"
+              >
+                Flashcards
+              </Tabs.Trigger>
+            </Tabs.List>
+            <Tabs.Content value="document" className="flex-1">
+              <DocumentView sections={material.sections!} />
+            </Tabs.Content>
+            <Tabs.Content value="flashcards" className="flex-1 flex flex-col">
+              <FlashcardView cards={material.cards!} />
+            </Tabs.Content>
+          </Tabs.Root>
+        ) : hasCards ? (
+          <FlashcardView cards={material.cards!} />
         ) : (
-          <FlashcardView material={material} />
+          <DocumentView sections={material.sections || []} />
         )}
       </main>
     </div>
   );
 };
 
-const DocumentView = ({ material }: { material: StudyDocument }) => {
+const DocumentView = ({ sections }: { sections: StudySection[] }) => {
   return (
     <div className="max-w-3xl mx-auto py-12 px-6 space-y-12">
-      {material.sections.map((section, idx) => (
+      {sections.map((section, idx) => (
         <motion.section 
           key={idx}
           initial={{ opacity: 0, y: 20 }}
@@ -79,18 +106,17 @@ const DocumentView = ({ material }: { material: StudyDocument }) => {
       <div className="py-12 text-center">
         <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
         <h3 className="text-2xl font-bold">You've finished this document!</h3>
-        <p className="text-cozy-muted mt-2">Great job. Your progress has been saved.</p>
       </div>
     </div>
   );
 };
 
-const FlashcardView = ({ material }: { material: StudyFlashcards }) => {
+const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
   const nextCard = () => {
-    if (currentIndex < material.cards.length - 1) {
+    if (currentIndex < cards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
     }
@@ -103,15 +129,15 @@ const FlashcardView = ({ material }: { material: StudyFlashcards }) => {
     }
   };
 
-  const card = material.cards[currentIndex];
-  const progress = ((currentIndex + 1) / material.cards.length) * 100;
+  const card = cards[currentIndex];
+  const progress = ((currentIndex + 1) / cards.length) * 100;
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8">
       <div className="w-full max-w-md">
         <div className="flex justify-between text-sm font-bold mb-2">
-          <span>Card {currentIndex + 1} of {material.cards.length}</span>
-          <span>{Math.round(progress)}% Complete</span>
+          <span>Card {currentIndex + 1} of {cards.length}</span>
+          <span>{Math.round(progress)}%</span>
         </div>
         <div className="w-full bg-cozy-accent h-2 rounded-full overflow-hidden">
           <div 
@@ -136,14 +162,12 @@ const FlashcardView = ({ material }: { material: StudyFlashcards }) => {
               transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
               onClick={() => setIsFlipped(!isFlipped)}
             >
-              {/* Front */}
               <div className="absolute inset-0 backface-hidden bg-white rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center shadow-xl border border-cozy-secondary/20">
                 <span className="text-xs font-bold uppercase tracking-widest text-cozy-muted mb-4">Question</span>
                 <p className="text-3xl font-bold leading-tight">{card.question}</p>
                 <p className="mt-8 text-sm text-cozy-muted italic">Click to reveal answer</p>
               </div>
 
-              {/* Back */}
               <div className="absolute inset-0 backface-hidden bg-cozy-primary rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center shadow-xl border border-cozy-primary rotate-y-180 text-white">
                 <span className="text-xs font-bold uppercase tracking-widest opacity-70 mb-4">Answer</span>
                 <p className="text-2xl font-medium leading-relaxed">{card.answer}</p>
@@ -164,7 +188,7 @@ const FlashcardView = ({ material }: { material: StudyFlashcards }) => {
         </button>
         <button 
           onClick={nextCard}
-          disabled={currentIndex === material.cards.length - 1}
+          disabled={currentIndex === cards.length - 1}
           className="p-4 bg-white rounded-full shadow-md disabled:opacity-30 hover:bg-cozy-accent transition-colors"
         >
           <ChevronRight size={32} />

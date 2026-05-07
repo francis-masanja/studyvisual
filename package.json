@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run api:dev & npm run vite:dev",
+    "dev": "concurrently \"npm run api:dev\" \"npm run vite:dev\"",
     "api:dev": "tsx scripts/dev-server.ts",
     "vite:dev": "vite",
     "build": "tsc -b && vite build",
@@ -45,6 +45,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
     "cors": "^2.8.6",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",

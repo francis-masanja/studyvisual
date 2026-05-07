@@ -8,88 +8,76 @@ export interface StudySection {
   content: string;
 }
 
-export interface StudyDocument {
-  type: 'document';
-  title: string;
-  sections: StudySection[];
-}
-
 export interface StudyFlashcard {
   question: string;
   answer: string;
 }
 
-export interface StudyFlashcards {
-  type: 'flashcards';
+export interface StudyMaterial {
+  type: 'document' | 'flashcards' | 'mixed';
   title: string;
-  cards: StudyFlashcard[];
+  sections?: StudySection[];
+  cards?: StudyFlashcard[];
 }
 
-export type StudyMaterial = StudyDocument | StudyFlashcards;
-
 export async function parseMarkdown(text: string, filename: string): Promise<StudyMaterial> {
-  // Simple heuristic: if it contains "Q:" and "A:", it might be flashcards
-  const isFlashcardHeuristic = text.includes('Q:') && text.includes('A:');
-  
-  if (isFlashcardHeuristic) {
-    const cards: StudyFlashcard[] = [];
-    const lines = text.split('\n');
-    let currentQ = '';
-    
-    for (const line of lines) {
-      if (line.startsWith('Q:')) {
-        currentQ = line.replace('Q:', '').trim();
-      } else if (line.startsWith('A:') && currentQ) {
-        cards.push({
-          question: currentQ,
-          answer: line.replace('A:', '').trim()
-        });
-        currentQ = '';
-      }
-    }
-    
-    return {
-      type: 'flashcards',
-      title: filename.replace('.md', ''),
-      cards
-    };
-  }
-
-  // Otherwise, treat as document
+  const cards: StudyFlashcard[] = [];
   const sections: StudySection[] = [];
   const lines = text.split('\n');
+  
   let currentTitle = filename.replace('.md', '');
   let currentSubtitle = 'Introduction';
   let currentContent: string[] = [];
+  let hasFlashcards = false;
 
-  for (const line of lines) {
-    if (line.startsWith('# ')) {
-      currentTitle = line.replace('# ', '').trim();
-    } else if (line.startsWith('## ')) {
-      if (currentContent.length > 0) {
+  const flushSection = async () => {
+    if (currentContent.length > 0) {
+      const contentText = currentContent.join('\n').trim();
+      if (contentText) {
         sections.push({
           subtitle: currentSubtitle,
-          content: await mdToHtml(currentContent.join('\n'))
+          content: await mdToHtml(contentText)
         });
       }
-      currentSubtitle = line.replace('## ', '').trim();
       currentContent = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    if (line.startsWith('# ')) {
+      await flushSection();
+      currentTitle = line.replace('# ', '').trim();
+    } else if (line.startsWith('## ')) {
+      await flushSection();
+      currentSubtitle = line.replace('## ', '').trim();
+    } else if (line.toUpperCase().startsWith('Q:')) {
+      hasFlashcards = true;
+      const question = line.substring(2).trim();
+      let answer = '';
+      if (i + 1 < lines.length && lines[i + 1].trim().toUpperCase().startsWith('A:')) {
+        answer = lines[i + 1].trim().substring(2).trim();
+        i++; // skip next line
+      }
+      cards.push({ question, answer });
     } else {
-      currentContent.push(line);
+      currentContent.push(lines[i]); // Keep original spacing for content
     }
   }
 
-  if (currentContent.length > 0 || sections.length === 0) {
-    sections.push({
-      subtitle: currentSubtitle,
-      content: await mdToHtml(currentContent.join('\n'))
-    });
-  }
+  await flushSection();
+
+  // Determine type
+  let type: 'document' | 'flashcards' | 'mixed' = 'document';
+  if (hasFlashcards && sections.length > 0) type = 'mixed';
+  else if (hasFlashcards) type = 'flashcards';
 
   return {
-    type: 'document',
+    type,
     title: currentTitle,
-    sections
+    sections,
+    cards
   };
 }
 
@@ -103,51 +91,51 @@ async function mdToHtml(md: string): Promise<string> {
 }
 
 export function parseJson(json: any, filename: string): StudyMaterial {
-  console.log("Parsing JSON data:", json);
+  const cards: StudyFlashcard[] = [];
+  const sections: StudySection[] = [];
   
-  // 1. Array-based flashcards
-  if (Array.isArray(json)) {
-    return {
-      type: 'flashcards',
-      title: filename.replace('.json', ''),
-      cards: json.map((item, idx) => {
-        const q = item.question || item.q || item.Prompt || item.prompt;
-        const a = item.answer || item.a || item.Response || item.response;
-        if (!q || !a) {
-          console.warn(`Flashcard at index ${idx} is missing question or answer:`, item);
-        }
-        return {
-          question: q || 'Empty Question',
-          answer: a || 'Empty Answer'
-        };
-      })
-    };
-  }
-  
-  // 2. Document with sections
-  if (json.sections && Array.isArray(json.sections)) {
-    return {
-      type: 'document',
-      title: json.title || filename.replace('.json', ''),
-      sections: json.sections.map((s: any) => ({
-        subtitle: s.subtitle || s.title || 'Untitled Section',
-        content: s.content || s.text || s.body || ''
-      }))
-    };
+  // Title detection
+  const title = json.title || filename.replace('.json', '');
+
+  // Recursive search for cards
+  const searchCards = (obj: any) => {
+    if (Array.isArray(obj)) {
+      obj.forEach(item => searchCards(item));
+    } else if (typeof obj === 'object' && obj !== null) {
+      const q = obj.question || obj.q || obj.Prompt || obj.prompt;
+      const a = obj.answer || obj.a || obj.Response || obj.response;
+      if (q && a) {
+        cards.push({ question: String(q), answer: String(a) });
+      } else {
+        Object.values(obj).forEach(val => searchCards(val));
+      }
+    }
+  };
+
+  searchCards(json);
+
+  // Section detection
+  const potentialSections = json.sections || json.chapters || json.data;
+  if (Array.isArray(potentialSections)) {
+    potentialSections.forEach((s: any) => {
+      if (typeof s === 'object') {
+        sections.push({
+          subtitle: s.subtitle || s.title || s.name || 'Untitled Section',
+          content: s.content || s.text || s.body || s.description || ''
+        });
+      }
+    });
   }
 
-  // 3. Single object that might be a flashcard
-  if (json.question || json.q || json.prompt) {
-     return {
-      type: 'flashcards',
-      title: filename.replace('.json', ''),
-      cards: [{
-        question: json.question || json.q || json.prompt,
-        answer: json.answer || json.a || json.response || ''
-      }]
-    };
-  }
+  // Determine type
+  let type: 'document' | 'flashcards' | 'mixed' = 'document';
+  if (cards.length > 0 && sections.length > 0) type = 'mixed';
+  else if (cards.length > 0) type = 'flashcards';
 
-  console.error("Failed to parse JSON structure:", json);
-  throw new Error("Unsupported JSON format. Expected an array of flashcards or an object with a 'sections' array.");
+  return {
+    type,
+    title,
+    sections: sections.length > 0 ? sections : undefined,
+    cards: cards.length > 0 ? cards : undefined
+  };
 }

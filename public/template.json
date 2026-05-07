@@ -1,0 +1,19 @@
+{
+  "title": "Computer Science Basics",
+  "sections": [
+    {
+      "subtitle": "Binary System",
+      "content": "Computers use binary (0 and 1) to represent all data. Each digit is called a **bit**."
+    }
+  ],
+  "cards": [
+    {
+      "question": "What does CPU stand for?",
+      "answer": "Central Processing Unit"
+    },
+    {
+      "q": "What is RAM?",
+      "a": "Random Access Memory - temporary storage for fast access."
+    }
+  ]
+}
