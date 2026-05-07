@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { db } from './db';
-import { randomUUID } from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -14,16 +13,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const database = db;
     // 1. Get or create user
-    let userResult = await db.execute({
+    let userResult = await database.execute({
       sql: "SELECT id FROM users WHERE username = ?",
       args: [username]
     });
 
     let userId;
     if (userResult.rows.length === 0) {
-      userId = randomUUID();
-      await db.execute({
+      userId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      await database.execute({
         sql: "INSERT INTO users (id, username) VALUES (?, ?)",
         args: [userId, username]
       });
@@ -32,19 +32,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Insert material
-    const materialId = randomUUID();
-    await db.execute({
+    const materialId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    await database.execute({
       sql: "INSERT INTO materials (id, user_id, title, type, content_json) VALUES (?, ?, ?, ?, ?)",
-      args: [materialId, userId, title, type, JSON.stringify(content_json)]
+      args: [materialId, userId as string, title, type, JSON.stringify(content_json)]
     });
 
     return res.status(200).json({ success: true, materialId });
   } catch (error: any) {
     console.error('Upload error:', error);
     return res.status(500).json({ 
-      error: 'Internal server error', 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+      error: 'Upload Failed', 
+      message: error.message 
     });
   }
 }
