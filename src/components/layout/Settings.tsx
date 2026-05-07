@@ -16,9 +16,9 @@ const Settings = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-cozy-bg flex">
+    <div className="min-h-screen bg-cozy-bg flex text-cozy-text">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-cozy-secondary/20 flex flex-col fixed inset-y-0 z-10">
+      <aside className="w-64 bg-cozy-card border-r border-cozy-secondary/20 flex flex-col fixed inset-y-0 z-10">
         <div className="p-6 border-b border-cozy-secondary/20">
           <h2 className="text-xl font-bold text-cozy-primary">StudyVisual</h2>
         </div>
@@ -42,7 +42,7 @@ const Settings = () => {
               {user?.username[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{user?.username}</p>
+              <p className="font-semibold truncate text-cozy-text">{user?.username}</p>
               <p className="text-xs text-cozy-muted">Free Plan</p>
             </div>
           </div>
@@ -60,7 +60,7 @@ const Settings = () => {
         <header className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="p-2 hover:bg-cozy-accent rounded-full transition-colors"
+            className="p-2 hover:bg-cozy-accent rounded-full transition-colors text-cozy-muted hover:text-cozy-text"
           >
             <ArrowLeft size={24} />
           </button>
@@ -70,8 +70,8 @@ const Settings = () => {
           </div>
         </header>
 
-        <section className="bg-white rounded-3xl p-8 border border-cozy-secondary/10 shadow-sm max-w-2xl">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+        <section className="bg-cozy-card rounded-3xl p-8 border border-cozy-secondary/10 shadow-sm max-w-2xl">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-cozy-text">
             Appearance
           </h2>
           
@@ -84,7 +84,7 @@ const Settings = () => {
                   "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left",
                   theme === t.id 
                     ? "border-cozy-primary bg-cozy-accent" 
-                    : "border-cozy-secondary/10 hover:border-cozy-secondary/30"
+                    : "border-cozy-secondary/10 hover:border-cozy-secondary/30 bg-cozy-card"
                 )}
               >
                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shadow-inner", t.color)}>
@@ -102,8 +102,8 @@ const Settings = () => {
           </div>
         </section>
 
-        <section className="mt-8 bg-white rounded-3xl p-8 border border-cozy-secondary/10 shadow-sm max-w-2xl">
-          <h2 className="text-xl font-bold mb-6">Profile</h2>
+        <section className="mt-8 bg-cozy-card rounded-3xl p-8 border border-cozy-secondary/10 shadow-sm max-w-2xl">
+          <h2 className="text-xl font-bold mb-6 text-cozy-text">Profile</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-cozy-muted">Username</label>
@@ -118,6 +118,7 @@ const Settings = () => {
         </section>
       </main>
     </div>
+
   );
 };
 

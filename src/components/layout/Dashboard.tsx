@@ -115,9 +115,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cozy-bg flex">
+    <div className="min-h-screen bg-cozy-bg text-cozy-text flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-cozy-secondary/20 flex flex-col fixed inset-y-0 z-10">
+      <aside className="w-64 bg-cozy-card border-r border-cozy-secondary/20 flex flex-col fixed inset-y-0 z-10">
         <div className="p-6 border-b border-cozy-secondary/20">
           <h2 className="text-xl font-bold text-cozy-primary">StudyVisual</h2>
         </div>
@@ -141,7 +141,7 @@ const Dashboard = () => {
               {user?.username[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{user?.username}</p>
+              <p className="font-semibold truncate text-cozy-text">{user?.username}</p>
               <p className="text-xs text-cozy-muted">Free Plan</p>
             </div>
           </div>
@@ -174,11 +174,11 @@ const Dashboard = () => {
             <Loader2 className="w-8 h-8 text-cozy-primary animate-spin" />
           </div>
         ) : materials.length === 0 ? (
-          <div className="bg-white rounded-3xl p-20 text-center border border-cozy-secondary/10 flex flex-col items-center">
+          <div className="bg-cozy-card rounded-3xl p-20 text-center border border-cozy-secondary/10 flex flex-col items-center">
             <div className="w-20 h-20 bg-cozy-accent rounded-full flex items-center justify-center mb-6">
               <FileText className="text-cozy-primary w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Your library is empty</h2>
+            <h2 className="text-2xl font-bold mb-2 text-cozy-text">Your library is empty</h2>
             <p className="text-cozy-muted mb-8 max-w-sm">Upload your first study material to see the magic happen.</p>
             <button 
               onClick={() => setIsUploading(true)}
@@ -204,20 +204,20 @@ const Dashboard = () => {
 
         {/* Upload Modal Overlay */}
         {isUploading && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-xl rounded-3xl p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+            <div className="bg-cozy-card w-full max-w-xl rounded-3xl p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 border border-cozy-secondary/20">
               <button 
                 onClick={() => setIsUploading(false)}
-                className="absolute top-6 right-6 p-2 hover:bg-cozy-accent rounded-full"
+                className="absolute top-6 right-6 p-2 hover:bg-cozy-accent rounded-full text-cozy-muted"
               >
                 <X size={20} />
               </button>
-              <h2 className="text-2xl font-bold mb-2">Upload Material</h2>
+              <h2 className="text-2xl font-bold mb-2 text-cozy-text">Upload Material</h2>
               <p className="text-cozy-muted mb-8">Upload a .md or .json file to visualize it.</p>
               
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-cozy-secondary/30 rounded-2xl p-12 flex flex-col items-center justify-center text-center hover:border-cozy-primary transition-colors cursor-pointer group"
+                className="border-2 border-dashed border-cozy-secondary/30 rounded-2xl p-12 flex flex-col items-center justify-center text-center hover:border-cozy-primary transition-colors cursor-pointer group bg-cozy-accent/20"
               >
                 <div className="w-16 h-16 bg-cozy-accent rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   {isUploadingFile ? (
@@ -226,7 +226,7 @@ const Dashboard = () => {
                     <UploadIcon className="text-cozy-primary w-8 h-8" />
                   )}
                 </div>
-                <p className="font-semibold text-lg">
+                <p className="font-semibold text-lg text-cozy-text">
                   {isUploadingFile ? "Processing..." : "Click to upload or drag and drop"}
                 </p>
                 <p className="text-sm text-cozy-muted mt-2">Markdown (.md) or JSON (.json)</p>
@@ -248,6 +248,7 @@ const Dashboard = () => {
         )}
       </main>
     </div>
+
   );
 };
 
@@ -267,23 +268,23 @@ const SidebarItem = ({ icon, label, active = false, onClick }: { icon: React.Rea
 const MaterialCard = ({ title, type, progress, date, onClick }: { title: string, type: string, progress: number, date: string, onClick?: () => void }) => (
   <div 
     onClick={onClick}
-    className="bg-white p-6 rounded-2xl border border-cozy-secondary/20 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col justify-between h-48"
+    className="bg-cozy-card p-6 rounded-2xl border border-cozy-secondary/20 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col justify-between h-48"
   >
     <div>
       <div className="flex justify-between items-start mb-4">
         <div className={cn(
           "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-          type === "Document" ? "bg-blue-100 text-blue-600" : "bg-orange-100 text-orange-600"
+          type === "Document" ? "bg-blue-100/20 text-blue-500" : "bg-orange-100/20 text-orange-500"
         )}>
           {type}
         </div>
       </div>
-      <h3 className="text-xl font-bold group-hover:text-cozy-primary transition-colors line-clamp-2">{title}</h3>
+      <h3 className="text-xl font-bold group-hover:text-cozy-primary transition-colors line-clamp-2 text-cozy-text">{title}</h3>
     </div>
     
     <div className="space-y-2">
-      <div className="flex justify-between text-xs font-medium">
-        <span className="text-cozy-muted">Progress</span>
+      <div className="flex justify-between text-xs font-medium text-cozy-muted">
+        <span>Progress</span>
         <span>{progress}%</span>
       </div>
       <div className="w-full bg-cozy-accent h-2 rounded-full overflow-hidden">

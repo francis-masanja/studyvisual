@@ -31,7 +31,7 @@ export const AuthDialog = ({ onSuccess, trigger }: AuthDialogProps) => {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-white p-8 rounded-3xl shadow-2xl animate-in zoom-in-95 fade-in duration-200 focus:outline-none">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-cozy-card p-8 rounded-3xl shadow-2xl animate-in zoom-in-95 fade-in duration-200 focus:outline-none border border-cozy-secondary/10">
           <div className="flex justify-between items-start mb-6">
             <div>
               <Dialog.Title className="text-2xl font-bold text-cozy-text">Welcome to StudyVisual</Dialog.Title>
@@ -40,7 +40,7 @@ export const AuthDialog = ({ onSuccess, trigger }: AuthDialogProps) => {
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <button className="p-2 hover:bg-cozy-accent rounded-full transition-colors" aria-label="Close">
+              <button className="p-2 hover:bg-cozy-accent rounded-full transition-colors text-cozy-muted" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </Dialog.Close>
@@ -55,7 +55,7 @@ export const AuthDialog = ({ onSuccess, trigger }: AuthDialogProps) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. studious_owl"
-                className="w-full px-4 py-3 rounded-xl border border-cozy-secondary/30 focus:border-cozy-primary focus:ring-2 focus:ring-cozy-primary/20 outline-none transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-cozy-secondary/30 bg-cozy-accent/30 focus:border-cozy-primary focus:ring-2 focus:ring-cozy-primary/20 outline-none transition-all text-cozy-text"
                 required
               />
             </div>

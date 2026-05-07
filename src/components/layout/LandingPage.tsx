@@ -61,10 +61,10 @@ const LandingPage = () => {
 
 const DesktopHero = ({ onGetStarted }: { onGetStarted: (user: string) => void }) => (
   <section className="py-24 px-6 flex flex-col items-center text-center max-w-4xl mx-auto">
-    <div className="bg-cozy-accent px-4 py-1 rounded-full text-sm font-medium mb-6 flex items-center gap-2">
+    <div className="bg-cozy-accent px-4 py-1 rounded-full text-sm font-medium mb-6 flex items-center gap-2 text-cozy-text">
       <Monitor className="w-4 h-4" /> Optimized for Desktop
     </div>
-    <h2 className="text-6xl font-extrabold mb-6 leading-tight">
+    <h2 className="text-6xl font-extrabold mb-6 leading-tight text-cozy-text">
       Transform your notes into <span className="text-cozy-primary italic">visual masterpieces</span>.
     </h2>
     <p className="text-xl text-cozy-muted mb-10 max-w-2xl">
@@ -79,7 +79,7 @@ const DesktopHero = ({ onGetStarted }: { onGetStarted: (user: string) => void })
           </button>
         } 
       />
-      <button className="bg-white border border-cozy-secondary text-cozy-text px-8 py-3 rounded-lg text-lg font-semibold hover:bg-cozy-accent transition-all">
+      <button className="bg-cozy-card border border-cozy-secondary/30 text-cozy-text px-8 py-3 rounded-lg text-lg font-semibold hover:bg-cozy-accent transition-all shadow-sm">
         View Demo
       </button>
     </div>
@@ -88,10 +88,10 @@ const DesktopHero = ({ onGetStarted }: { onGetStarted: (user: string) => void })
 
 const MobileHero = ({ onGetStarted }: { onGetStarted: (user: string) => void }) => (
   <section className="py-16 px-6 flex flex-col items-center text-center">
-    <div className="bg-cozy-accent px-4 py-1 rounded-full text-sm font-medium mb-6 flex items-center gap-2">
+    <div className="bg-cozy-accent px-4 py-1 rounded-full text-sm font-medium mb-6 flex items-center gap-2 text-cozy-text">
       <Smartphone className="w-4 h-4" /> Seamless Mobile Experience
     </div>
-    <h2 className="text-4xl font-extrabold mb-6 leading-tight">
+    <h2 className="text-4xl font-extrabold mb-6 leading-tight text-cozy-text">
       Study <span className="text-cozy-primary italic">anywhere</span>, beautifully.
     </h2>
     <p className="text-lg text-cozy-muted mb-8">
@@ -109,9 +109,9 @@ const MobileHero = ({ onGetStarted }: { onGetStarted: (user: string) => void }) 
 );
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <div className="p-8 bg-white rounded-2xl border border-cozy-secondary/20 shadow-sm hover:shadow-md transition-shadow">
+  <div className="p-8 bg-cozy-card rounded-2xl border border-cozy-secondary/20 shadow-sm hover:shadow-md transition-shadow">
     <div className="mb-4">{icon}</div>
-    <h3 className="text-xl font-bold mb-2">{title}</h3>
+    <h3 className="text-xl font-bold mb-2 text-cozy-text">{title}</h3>
     <p className="text-cozy-muted leading-relaxed">{description}</p>
   </div>
 );

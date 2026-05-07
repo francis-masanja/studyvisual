@@ -29,15 +29,15 @@ const StudyVisualizer = () => {
     fetchMaterial();
   }, [id]);
 
-  if (isLoading) return <div className="min-h-screen bg-cozy-bg flex items-center justify-center">Loading...</div>;
-  if (!material) return <div className="min-h-screen bg-cozy-bg flex items-center justify-center">Material not found.</div>;
+  if (isLoading) return <div className="min-h-screen bg-cozy-bg flex items-center justify-center text-cozy-text">Loading...</div>;
+  if (!material) return <div className="min-h-screen bg-cozy-bg flex items-center justify-center text-cozy-text">Material not found.</div>;
 
   const hasSections = material.sections && material.sections.length > 0;
   const hasCards = material.cards && material.cards.length > 0;
 
   return (
     <div className="min-h-screen bg-cozy-bg text-cozy-text flex flex-col">
-      <header className="p-4 border-b border-cozy-secondary/20 bg-white flex justify-between items-center sticky top-0 z-50">
+      <header className="p-4 border-b border-cozy-secondary/20 bg-cozy-card flex justify-between items-center sticky top-0 z-50">
         <button 
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-cozy-muted hover:text-cozy-text transition-colors"
@@ -51,7 +51,7 @@ const StudyVisualizer = () => {
       <main className="flex-1 flex flex-col">
         {material.type === 'mixed' ? (
           <Tabs.Root defaultValue="document" className="flex-1 flex flex-col">
-            <Tabs.List className="flex justify-center gap-8 p-4 bg-white border-b border-cozy-secondary/10">
+            <Tabs.List className="flex justify-center gap-8 p-4 bg-cozy-card border-b border-cozy-secondary/10">
               <Tabs.Trigger 
                 value="document"
                 className="pb-2 px-4 font-bold text-cozy-muted data-[state=active]:text-cozy-primary data-[state=active]:border-b-2 data-[state=active]:border-cozy-primary transition-all"
@@ -91,7 +91,7 @@ const DocumentView = ({ sections }: { sections: StudySection[] }) => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-cozy-secondary/10"
+          className="bg-cozy-card p-8 md:p-12 rounded-3xl shadow-sm border border-cozy-secondary/10"
         >
           <h2 className="text-2xl font-bold mb-6 text-cozy-primary flex items-center gap-3">
             <span className="w-8 h-8 bg-cozy-accent rounded-full flex items-center justify-center text-sm">{idx + 1}</span>
@@ -103,7 +103,7 @@ const DocumentView = ({ sections }: { sections: StudySection[] }) => {
           />
         </motion.section>
       ))}
-      <div className="py-12 text-center">
+      <div className="py-12 text-center text-cozy-text">
         <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
         <h3 className="text-2xl font-bold">You've finished this document!</h3>
       </div>
@@ -162,12 +162,14 @@ const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
               transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
               onClick={() => setIsFlipped(!isFlipped)}
             >
-              <div className="absolute inset-0 backface-hidden bg-white rounded-[2.5rem] p-8 md:p-12 flex flex-col items-start justify-center text-left shadow-xl border border-cozy-secondary/20 overflow-y-auto">
+              {/* Question Side */}
+              <div className="absolute inset-0 backface-hidden bg-cozy-card rounded-[2.5rem] p-8 md:p-12 flex flex-col items-start justify-center text-left shadow-xl border border-cozy-secondary/20 overflow-y-auto">
                 <span className="text-xs font-bold uppercase tracking-widest text-cozy-muted mb-4">Question</span>
                 <p className="text-xl md:text-2xl font-bold leading-tight text-cozy-text">{card.question}</p>
                 <p className="mt-auto pt-4 text-xs text-cozy-muted italic w-full text-center">Click to reveal answer</p>
               </div>
 
+              {/* Answer Side */}
               <div className="absolute inset-0 backface-hidden bg-cozy-primary rounded-[2.5rem] p-8 md:p-12 flex flex-col items-start justify-center text-left shadow-xl border border-cozy-primary rotate-y-180 text-white overflow-y-auto">
                 <span className="text-xs font-bold uppercase tracking-widest opacity-70 mb-4">Answer</span>
                 <p className="text-lg md:text-xl font-medium leading-relaxed">{card.answer}</p>
@@ -182,14 +184,14 @@ const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
         <button 
           onClick={prevCard}
           disabled={currentIndex === 0}
-          className="p-4 bg-white rounded-full shadow-md disabled:opacity-30 hover:bg-cozy-accent transition-colors"
+          className="p-4 bg-cozy-card rounded-full shadow-md disabled:opacity-30 hover:bg-cozy-accent transition-colors"
         >
           <ChevronLeft size={32} />
         </button>
         <button 
           onClick={nextCard}
           disabled={currentIndex === cards.length - 1}
-          className="p-4 bg-white rounded-full shadow-md disabled:opacity-30 hover:bg-cozy-accent transition-colors"
+          className="p-4 bg-cozy-card rounded-full shadow-md disabled:opacity-30 hover:bg-cozy-accent transition-colors"
         >
           <ChevronRight size={32} />
         </button>

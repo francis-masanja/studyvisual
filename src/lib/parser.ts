@@ -97,32 +97,92 @@ export function parseJson(json: any, filename: string): StudyMaterial {
   // Title detection
   const title = json.title || filename.replace('.json', '');
 
+  const qKeys = ['question', 'q', 'Prompt', 'prompt', 'term', 'front', 'header', 'title', 'query', 'problem', 'task'];
+  const aKeys = ['answer', 'a', 'Response', 'response', 'definition', 'back', 'content', 'body', 'description', 'solution', 'explanation', 'result'];
+
   // Recursive search for cards
   const searchCards = (obj: any) => {
     if (Array.isArray(obj)) {
       obj.forEach(item => searchCards(item));
     } else if (typeof obj === 'object' && obj !== null) {
-      const q = obj.question || obj.q || obj.Prompt || obj.prompt;
-      const a = obj.answer || obj.a || obj.Response || obj.response;
-      if (q && a) {
-        cards.push({ question: String(q), answer: String(a) });
-      } else {
-        Object.values(obj).forEach(val => searchCards(val));
+      let foundQ: string | null = null;
+      let foundA: string | null = null;
+      let usedQKey: string | null = null;
+
+      // 1. Try to find explicit Q&A keys
+      for (const key of qKeys) {
+        if (obj[key] !== undefined && typeof obj[key] !== 'object' && String(obj[key]).trim() !== '') {
+          foundQ = String(obj[key]);
+          usedQKey = key;
+          break;
+        }
+      }
+
+      for (const key of aKeys) {
+        if (obj[key] !== undefined && typeof obj[key] !== 'object' && String(obj[key]).trim() !== '') {
+          if (key !== usedQKey) {
+            foundA = String(obj[key]);
+            break;
+          }
+        }
+      }
+
+      if (foundQ && foundA && foundQ !== foundA) {
+        cards.push({ question: foundQ, answer: foundA });
+      } 
+      // 2. Fallback: If it's a simple key-value object where values are strings, 
+      // and it's not a root object with specific keys, treat keys as Q and values as A
+      else if (Object.keys(obj).length > 0 && Object.keys(obj).length < 20) {
+        let isKVMap = true;
+        const tempCards: StudyFlashcard[] = [];
+        for (const [key, value] of Object.entries(obj)) {
+          if (typeof value === 'string' && value.length > 0 && key.length > 1) {
+            // Check if key is not a standard metadata key
+            if (!['title', 'id', 'type', 'version', 'date', 'author'].includes(key.toLowerCase())) {
+              tempCards.push({ question: key, answer: value });
+            } else {
+              isKVMap = false;
+              break;
+            }
+          } else {
+            isKVMap = false;
+            break;
+          }
+        }
+        
+        if (isKVMap && tempCards.length > 0) {
+          cards.push(...tempCards);
+          return; // Stop searching deeper if this was a map
+        }
+
+        // Otherwise search deeper
+        Object.values(obj).forEach(val => {
+          if (typeof val === 'object') searchCards(val);
+        });
+      }
+      else {
+        Object.values(obj).forEach(val => {
+          if (typeof val === 'object') searchCards(val);
+        });
       }
     }
   };
 
   searchCards(json);
 
-  // Section detection
+  // Section detection (avoiding overlap with cards if possible)
   const potentialSections = json.sections || json.chapters || json.data;
   if (Array.isArray(potentialSections)) {
     potentialSections.forEach((s: any) => {
       if (typeof s === 'object') {
-        sections.push({
-          subtitle: s.subtitle || s.title || s.name || 'Untitled Section',
-          content: s.content || s.text || s.body || s.description || ''
-        });
+        const sub = s.subtitle || s.title || s.name || s.header;
+        const cont = s.content || s.text || s.body || s.description || s.info;
+        if (sub || cont) {
+          sections.push({
+            subtitle: String(sub || 'Untitled Section'),
+            content: String(cont || '')
+          });
+        }
       }
     });
   }
@@ -139,3 +199,4 @@ export function parseJson(json: any, filename: string): StudyMaterial {
     cards: cards.length > 0 ? cards : undefined
   };
 }
+
