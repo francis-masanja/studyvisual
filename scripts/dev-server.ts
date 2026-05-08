@@ -6,6 +6,11 @@ import cors from 'cors';
 import uploadHandler from '../api/upload.js';
 import materialsHandler from '../api/materials.js';
 import materialHandler from '../api/material.js';
+import dailyChallengeHandler from '../api/daily-challenge.js';
+import deleteMaterialHandler from '../api/delete-material.js';
+import categoriesHandler from '../api/categories.js';
+import createCategoryHandler from '../api/create-category.js';
+import recordAttemptHandler from '../api/record-attempt.js';
 
 const app = express();
 app.use(cors());
@@ -32,6 +37,11 @@ const wrapHandler = (handler: any) => async (req: any, res: any) => {
 app.post('/api/upload', wrapHandler(uploadHandler));
 app.get('/api/materials', wrapHandler(materialsHandler));
 app.get('/api/material', wrapHandler(materialHandler));
+app.get('/api/daily-challenge', wrapHandler(dailyChallengeHandler));
+app.delete('/api/delete-material', wrapHandler(deleteMaterialHandler));
+app.get('/api/categories', wrapHandler(categoriesHandler));
+app.post('/api/create-category', wrapHandler(createCategoryHandler));
+app.post('/api/record-attempt', wrapHandler(recordAttemptHandler));
 
 const PORT = 3000;
 const HOST = '127.0.0.1'; // Force IPv4

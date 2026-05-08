@@ -1,19 +1,10 @@
-# Study Template
+# Computer Science Basics
 
-## Introduction
-This is a standard document section. You can use **Markdown** here!
-- Lists are supported
-- **Bold text** is supported
-- Even [links](https://google.com)
+## Binary System
+Computers use binary (0 and 1) to represent all data. Each digit is called a **bit**.
 
-## Advanced Features
-The parser is now more flexible. You can include different types of content in one file.
+Q: What does CPU stand for?
+A: Central Processing Unit
 
-Q: How do I create a flashcard in Markdown?
-A: Simply use the Q: and A: prefixes on their own lines.
-
-Q: Can I have multiple cards?
-A: Yes! Just keep adding Q: and A: pairs anywhere in the document.
-
-## Conclusion
-Happy studying with StudyVisual!
+Q: What is RAM?
+A: Random Access Memory - temporary storage for fast access.

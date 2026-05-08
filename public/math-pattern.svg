@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" opacity="0.15">
+  <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- E=mc^2 (Rough Handwriting) -->
+    <path d="M40 60 c5 -10 15 -10 20 0 M42 70 l18 2 M42 80 l18 -1 M90 65 q5 -5 10 0 q-5 10 -10 5 M115 55 l2 25 M116 70 q10 -15 20 -5 q10 -10 20 0 l-2 15" />
+    <path d="M170 75 q10 -20 20 0 M195 55 q10 -15 15 0 l-15 5" />
+    
+    <!-- Integral (Rough) -->
+    <path d="M260 100 q-15 -30 0 -60 q15 -30 0 -60" />
+    <path d="M280 70 q10 -15 20 0 M310 50 l15 15 M330 70 q15 -20 25 -5 l-2 20 M365 55 l15 30 M380 55 l-15 30" />
+
+    <!-- Pythagorean (Rough) -->
+    <path d="M50 180 q15 -15 25 0 q-10 15 -25 0 M85 160 l10 15 l-12 10 M120 180 l30 2 M135 165 l-2 30" />
+    <path d="M165 160 l2 40 q15 -15 25 0 q15 -15 10 -35 M200 160 l15 15 l-12 10 M230 175 l30 -2 M230 188 l30 2" />
+    <path d="M280 180 q15 -15 25 0 q-10 15 -25 0 M315 160 l10 15 l-12 10" />
+
+    <!-- Physics Symbols -->
+    <path d="M350 160 l40 2 l-30 25 l30 30 l-40 -2" /> <!-- Sigma -->
+    <path d="M60 300 l40 -2 M75 300 l2 40 M90 300 l-2 40" /> <!-- Pi -->
+    <path d="M140 330 q15 -30 30 0 q-15 30 -30 0 l30 0" /> <!-- Alpha -->
+    <path d="M200 320 q15 -15 30 0 q-15 15 -30 0 l40 0" /> <!-- Theta -->
+    
+    <!-- F=ma (Rough) -->
+    <path d="M280 300 l35 -2 M282 300 l2 50 M283 325 l25 -3 M330 315 l30 -2 l-5 10 l5 10 M370 325 q15 -15 25 0 l-2 25 q-15 10 -25 -10 M410 350 q15 -30 25 0" />
+
+    <!-- More rough calculations -->
+    <path d="M50 420 l30 -40 l15 40 M55 405 l20 -2 M100 405 l30 2 M100 415 l30 -2" />
+    <path d="M150 400 l40 5 M165 395 l2 45 M180 395 l-2 45" />
+    <path d="M220 410 q15 -15 25 5 l-5 30 M260 390 l15 15 l-15 10" />
+  </g>
+</svg>

@@ -9,12 +9,15 @@ export interface StudySection {
 }
 
 export interface StudyFlashcard {
+  id?: string;
   question: string;
   answer: string;
+  options?: string[];
+  rationale?: string;
 }
 
 export interface StudyMaterial {
-  type: 'document' | 'flashcards' | 'mixed';
+  type: 'document' | 'flashcards' | 'quiz' | 'mixed';
   title: string;
   sections?: StudySection[];
   cards?: StudyFlashcard[];
@@ -29,6 +32,7 @@ export async function parseMarkdown(text: string, filename: string): Promise<Stu
   let currentSubtitle = 'Introduction';
   let currentContent: string[] = [];
   let hasFlashcards = false;
+  let hasOptions = false;
 
   const flushSection = async () => {
     if (currentContent.length > 0) {
@@ -56,11 +60,33 @@ export async function parseMarkdown(text: string, filename: string): Promise<Stu
       hasFlashcards = true;
       const question = line.substring(2).trim();
       let answer = '';
-      if (i + 1 < lines.length && lines[i + 1].trim().toUpperCase().startsWith('A:')) {
-        answer = lines[i + 1].trim().substring(2).trim();
-        i++; // skip next line
+      const options: string[] = [];
+      
+      // Look ahead for options or answer
+      let j = i + 1;
+      while (j < lines.length) {
+        const nextLine = lines[j].trim();
+        if (nextLine.toUpperCase().startsWith('A:')) {
+          answer = nextLine.substring(2).trim();
+          i = j;
+          break;
+        } else if (nextLine.startsWith('- ') || nextLine.startsWith('* ') || /^[a-dA-D][\)\.]\s/.test(nextLine)) {
+          options.push(nextLine.replace(/^[-*]\s|^[a-dA-D][\)\.]\s/, '').trim());
+          hasOptions = true;
+          j++;
+        } else if (nextLine === '') {
+          j++;
+        } else {
+          break;
+        }
       }
-      cards.push({ question, answer });
+      
+      cards.push({ 
+        id: Math.random().toString(36).substring(2) + Date.now().toString(36),
+        question, 
+        answer, 
+        options: options.length > 0 ? options : undefined 
+      });
     } else {
       currentContent.push(lines[i]); // Keep original spacing for content
     }
@@ -69,9 +95,12 @@ export async function parseMarkdown(text: string, filename: string): Promise<Stu
   await flushSection();
 
   // Determine type
-  let type: 'document' | 'flashcards' | 'mixed' = 'document';
-  if (hasFlashcards && sections.length > 0) type = 'mixed';
-  else if (hasFlashcards) type = 'flashcards';
+  let type: 'document' | 'flashcards' | 'quiz' | 'mixed' = 'document';
+  if (hasFlashcards) {
+    if (sections.length > 0) type = 'mixed';
+    else if (hasOptions) type = 'quiz';
+    else type = 'flashcards';
+  }
 
   return {
     type,
@@ -98,15 +127,48 @@ export function parseJson(json: any, filename: string): StudyMaterial {
   const title = json.title || filename.replace('.json', '');
 
   const qKeys = ['question', 'q', 'Prompt', 'prompt', 'term', 'front', 'header', 'title', 'query', 'problem', 'task'];
-  const aKeys = ['answer', 'a', 'Response', 'response', 'definition', 'back', 'content', 'body', 'description', 'solution', 'explanation', 'result'];
+  const aKeys = ['answer', 'a', 'Response', 'response', 'definition', 'back', 'content', 'body', 'description', 'solution', 'explanation', 'result', 'correct_answer'];
+  const optKeys = ['options', 'choices', 'answers', 'distractors'];
+
+  let hasOptions = false;
 
   // Recursive search for cards
   const searchCards = (obj: any) => {
     if (Array.isArray(obj)) {
       obj.forEach(item => searchCards(item));
     } else if (typeof obj === 'object' && obj !== null) {
+      // Specialized handling for "questions" array in the provided format
+      if (obj.questions && Array.isArray(obj.questions)) {
+        obj.questions.forEach((q: any) => {
+          let opts: string[] | undefined = undefined;
+          if (q.options && typeof q.options === 'object' && !Array.isArray(q.options)) {
+             opts = Object.values(q.options).map(String);
+          } else if (Array.isArray(q.options)) {
+             opts = q.options.map(String);
+          }
+
+          let ans = q.correct_answer || q.answer || q.a;
+          // If the answer is a key (e.g. "B") and options is an object, map it
+          if (ans && q.options && typeof q.options === 'object' && q.options[ans]) {
+            ans = q.options[ans];
+          }
+
+          cards.push({
+            id: Math.random().toString(36).substring(2) + Date.now().toString(36),
+            question: q.question || q.q,
+            answer: String(ans),
+            options: opts,
+            rationale: q.rationale || q.explanation
+          });
+          if (opts && opts.length > 0) hasOptions = true;
+        });
+        return; // Don't search deeper into this object
+      }
+
       let foundQ: string | null = null;
       let foundA: string | null = null;
+      let foundOpts: string[] | undefined = undefined;
+      let foundRationale: string | undefined = undefined;
       let usedQKey: string | null = null;
 
       // 1. Try to find explicit Q&A keys
@@ -127,46 +189,37 @@ export function parseJson(json: any, filename: string): StudyMaterial {
         }
       }
 
-      if (foundQ && foundA && foundQ !== foundA) {
-        cards.push({ question: foundQ, answer: foundA });
-      } 
-      // 2. Fallback: If it's a simple key-value object where values are strings, 
-      // and it's not a root object with specific keys, treat keys as Q and values as A
-      else if (Object.keys(obj).length > 0 && Object.keys(obj).length < 20) {
-        let isKVMap = true;
-        const tempCards: StudyFlashcard[] = [];
-        for (const [key, value] of Object.entries(obj)) {
-          if (typeof value === 'string' && value.length > 0 && key.length > 1) {
-            // Check if key is not a standard metadata key
-            if (!['title', 'id', 'type', 'version', 'date', 'author'].includes(key.toLowerCase())) {
-              tempCards.push({ question: key, answer: value });
-            } else {
-              isKVMap = false;
-              break;
-            }
-          } else {
-            isKVMap = false;
-            break;
-          }
+      for (const key of optKeys) {
+        if (Array.isArray(obj[key])) {
+          foundOpts = obj[key].map(String);
+          if (foundOpts.length > 0) hasOptions = true;
+          break;
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          // Handle { "A": "...", "B": "..." }
+          foundOpts = Object.values(obj[key]).map(String);
+          if (foundOpts.length > 0) hasOptions = true;
+          break;
         }
-        
-        if (isKVMap && tempCards.length > 0) {
-          cards.push(...tempCards);
-          return; // Stop searching deeper if this was a map
+      }
+      
+      foundRationale = obj.rationale || obj.explanation;
+
+      if (foundQ && foundA && foundQ !== foundA) {
+        // Special case: if A is just "A", "B", "C", "D" and we have options
+        if (foundA.length === 1 && obj.options && typeof obj.options === 'object' && obj.options[foundA]) {
+          foundA = obj.options[foundA];
         }
 
-        // Otherwise search deeper
-        Object.values(obj).forEach(val => {
-          if (typeof val === 'object') searchCards(val);
+        cards.push({ 
+          id: Math.random().toString(36).substring(2) + Date.now().toString(36),
+          question: foundQ, 
+          answer: foundA, 
+          options: foundOpts,
+          rationale: foundRationale
         });
-      }
-      else {
-        Object.values(obj).forEach(val => {
-          if (typeof val === 'object') searchCards(val);
-        });
-      }
-    }
-  };
+      }} 
+      // 2. Fallback: If it's a simple key-value object where values are strings...
+
 
   searchCards(json);
 
@@ -188,9 +241,12 @@ export function parseJson(json: any, filename: string): StudyMaterial {
   }
 
   // Determine type
-  let type: 'document' | 'flashcards' | 'mixed' = 'document';
-  if (cards.length > 0 && sections.length > 0) type = 'mixed';
-  else if (cards.length > 0) type = 'flashcards';
+  let type: 'document' | 'flashcards' | 'quiz' | 'mixed' = 'document';
+  if (cards.length > 0) {
+    if (sections.length > 0) type = 'mixed';
+    else if (hasOptions) type = 'quiz';
+    else type = 'flashcards';
+  }
 
   return {
     type,
@@ -199,4 +255,5 @@ export function parseJson(json: any, filename: string): StudyMaterial {
     cards: cards.length > 0 ? cards : undefined
   };
 }
-
+}
+  

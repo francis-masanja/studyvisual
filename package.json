@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "concurrently \"npm run api:dev\" \"npm run vite:dev\"",
-    "api:dev": "tsx scripts/dev-server.ts",
+    "api:dev": "tsx --watch scripts/dev-server.ts",
     "vite:dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

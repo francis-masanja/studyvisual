@@ -1,0 +1,20 @@
+{
+  "title": "General Science Quiz",
+  "cards": [
+    {
+      "question": "What is the powerhouse of the cell?",
+      "options": ["Nucleus", "Ribosome", "Mitochondria", "Golgi Apparatus"],
+      "answer": "Mitochondria"
+    },
+    {
+      "question": "Which planet is known as the Red Planet?",
+      "options": ["Venus", "Mars", "Jupiter", "Saturn"],
+      "answer": "Mars"
+    },
+    {
+      "question": "What is the chemical symbol for gold?",
+      "options": ["Ag", "Au", "Pb", "Fe"],
+      "answer": "Au"
+    }
+  ]
+}
