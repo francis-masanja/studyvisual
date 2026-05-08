@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+:root {
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  
+  /* Default Cozy Warm Theme */
+  --bg: #faf7f2;
+  --text: #4a3f35;
+  --primary: #8d7b68;
+  --secondary: #c8b6a6;
+  --accent: #f8ede3;
+  --muted: #a4907c;
+  --card-bg: #ffffff;
+  --card-text: #4a3f35;
+}
+
+[data-theme='dark'] {
+  --bg: #121212;
+  --text: #e8e8e8;
+  --primary: #d4c1ac;
+  --secondary: #2d2d2d;
+  --accent: #1e1e1e;
+  --muted: #a0a0a0;
+  --card-bg: #1e1e1e;
+  --card-text: #e8e8e8;
+}
+
+[data-theme='blue'] {
+  --bg: #f0f4f8;
+  --text: #102a43;
+  --primary: #486581;
+  --secondary: #9fb3c8;
+  --accent: #d9e2ec;
+  --muted: #627d98;
+  --card-bg: #ffffff;
+  --card-text: #102a43;
+}
+
+[data-theme='red'] {
+  --bg: #fdf2f2;
+  --text: #610404;
+  --primary: #9b2c2c;
+  --secondary: #fbd3d3;
+  --accent: #fff5f5;
+  --muted: #c53030;
+  --card-bg: #ffffff;
+  --card-text: #610404;
+}
+
+@theme {
+  --color-cozy-bg: var(--bg);
+  --color-cozy-text: var(--text);
+  --color-cozy-primary: var(--primary);
+  --color-cozy-secondary: var(--secondary);
+  --color-cozy-accent: var(--accent);
+  --color-cozy-muted: var(--muted);
+  --color-cozy-card: var(--card-bg);
+  --color-cozy-card-text: var(--card-text);
+}
+
+body {
+  background-color: var(--bg);
+  background-image: url('/math-pattern.svg');
+  background-repeat: repeat;
+  color: var(--text);
+  font-family: var(--font-family);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
+
+.prose-cozy {
+  color: var(--text);
+}
+.prose-cozy h1, .prose-cozy h2, .prose-cozy h3 {
+  color: var(--primary);
+}
