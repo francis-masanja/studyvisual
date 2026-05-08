@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (const card of content_json.cards) {
         const questionId = card.id || (Math.random().toString(36).substring(2) + Date.now().toString(36));
         await database.execute({
-          sql: "INSERT INTO questions (id, category_id, user_id, question_text, options_json, correct_answer, rationale) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          sql: "INSERT OR IGNORE INTO questions (id, category_id, user_id, question_text, options_json, correct_answer, rationale) VALUES (?, ?, ?, ?, ?, ?, ?)",
           args: [
             questionId,
             category_id || null,

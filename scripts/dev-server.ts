@@ -11,6 +11,7 @@ import deleteMaterialHandler from '../api/delete-material.js';
 import categoriesHandler from '../api/categories.js';
 import createCategoryHandler from '../api/create-category.js';
 import recordAttemptHandler from '../api/record-attempt.js';
+import pingHandler from '../api/ping.js';
 
 const app = express();
 app.use(cors());
@@ -42,6 +43,7 @@ app.delete('/api/delete-material', wrapHandler(deleteMaterialHandler));
 app.get('/api/categories', wrapHandler(categoriesHandler));
 app.post('/api/create-category', wrapHandler(createCategoryHandler));
 app.post('/api/record-attempt', wrapHandler(recordAttemptHandler));
+app.get('/api/ping', wrapHandler(pingHandler));
 
 const PORT = 3000;
 const HOST = '127.0.0.1'; // Force IPv4

@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (community === 'true') {
       console.log("Fetching all community quizzes");
       result = await database.execute({
-        sql: "SELECT m.id, m.title, m.type, u.username as author FROM materials m JOIN users u ON m.user_id = u.id WHERE m.type IN ('flashcards', 'mixed') ORDER BY m.id DESC LIMIT 50",
+        sql: "SELECT m.id, m.title, m.type, u.username as author FROM materials m JOIN users u ON m.user_id = u.id WHERE m.type IN ('flashcards', 'mixed', 'quiz') ORDER BY m.id DESC LIMIT 50",
         args: []
       });
     } else {
@@ -26,7 +26,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       console.log("Fetching materials for:", username);
       result = await database.execute({
-        sql: "SELECT m.id, m.title, m.type FROM materials m JOIN users u ON m.user_id = u.id WHERE u.username = ?",
+        sql: `
+          SELECT m.id, m.title, m.type, p.completion_percentage 
+          FROM materials m 
+          JOIN users u ON m.user_id = u.id 
+          LEFT JOIN progress p ON m.id = p.material_id AND p.user_id = u.id
+          WHERE u.username = ?
+        `,
         args: [username as string]
       });
     }

@@ -4,10 +4,10 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const url = process.env.VITE_TURSO_URL || '';
-const authToken = process.env.VITE_TURSOR_API_KEY || '';
+const authToken = process.env.VITE_TURSO_AUTH_TOKEN || process.env.VITE_TURSOR_API_KEY || '';
 
 if (!url || !authToken) {
-  console.error("Please provide VITE_TURSO_URL and VITE_TURSOR_API_KEY in .env file");
+  console.error("Please provide VITE_TURSO_URL and (VITE_TURSO_AUTH_TOKEN or VITE_TURSOR_API_KEY) in .env file");
   process.exit(1);
 }
 

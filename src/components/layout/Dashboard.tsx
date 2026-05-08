@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../hooks/useUser';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Plus, FileText, LayoutGrid, Settings, Upload as UploadIcon, X, Loader2, Users, BookOpen, Layers, Trash2, Flame, Trophy, Target, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LogOut, Plus, FileText, LayoutGrid, Settings, Upload as UploadIcon, X, Loader2, Users, BookOpen, Layers, Trash2, Flame, Trophy, Target } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { parseMarkdown, parseJson } from '../../lib/parser';
 
@@ -36,8 +36,12 @@ const Dashboard = () => {
   // Upload States
   const [isUploading, setIsUploading] = useState(false);
   const [uploadTab, setUploadTab] = useState<'form' | 'file'>('form');
+  const [isUploadingNotes, setIsUploadingNotes] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const notesFileInputRef = useRef<HTMLInputElement>(null);
 
   // Manual Form States
   const [manualQuestion, setManualQuestion] = useState('');
@@ -47,6 +51,50 @@ const Dashboard = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
 
+  // --- API Functions ---
+  const fetchMyMaterials = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/materials?username=${user.username}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.materials) {
+        setMyMaterials(data.materials);
+      }
+    } catch (error) {
+      console.error("Error fetching my materials:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCommunityMaterials = async () => {
+    try {
+      const res = await fetch(`/api/materials?community=true`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.materials) {
+        setCommunityMaterials(data.materials);
+      }
+    } catch (error) {
+      console.error("Error fetching community materials:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data.categories);
+        if (data.categories.length > 0) setSelectedCategoryId(data.categories[0].id);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  // --- Effects ---
   useEffect(() => {
     fetchMyMaterials();
     fetchCommunityMaterials();
@@ -83,19 +131,7 @@ const Dashboard = () => {
     checkDaily();
   }, [user]);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/categories');
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data.categories);
-        if (data.categories.length > 0) setSelectedCategoryId(data.categories[0].id);
-      }
-    } catch(e) {
-      console.error(e);
-    }
-  };
-
+  // --- Handlers ---
   const handleAddCategory = async () => {
     if (!newCategoryName) return;
     try {
@@ -113,35 +149,6 @@ const Dashboard = () => {
       }
     } catch(e) {
       console.error(e);
-    }
-  };
-
-  const fetchMyMaterials = async () => {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/materials?username=${user.username}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.materials) {
-        setMyMaterials(data.materials);
-      }
-    } catch (error) {
-      console.error("Error fetching my materials:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCommunityMaterials = async () => {
-    try {
-      const res = await fetch(`/api/materials?community=true`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.materials) {
-        setCommunityMaterials(data.materials);
-      }
-    } catch (error) {
-      console.error("Error fetching community materials:", error);
     }
   };
 
@@ -224,6 +231,90 @@ const Dashboard = () => {
     reader.readAsText(file);
   };
 
+  const handleNoteFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploadingFile(true);
+    const reader = new FileReader();
+    
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        let parsedData;
+
+        if (file.name.endsWith('.md')) {
+          parsedData = await parseMarkdown(text, file.name);
+        } else if (file.name.endsWith('.json')) {
+          parsedData = parseJson(JSON.parse(text), file.name);
+        } else {
+          throw new Error("Unsupported file type");
+        }
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: user.username,
+            title: parsedData.title,
+            type: parsedData.type,
+            content_json: parsedData
+          })
+        });
+
+        if (response.ok) {
+          setIsUploadingNotes(false);
+          fetchMyMaterials();
+          fetchCommunityMaterials();
+        }
+      } catch (error) {
+        console.error("Note upload failed:", error);
+        alert("Upload failed. Please check the file format.");
+      } finally {
+        setIsUploadingFile(false);
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  const handleNoteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !noteTitle || !noteContent) {
+      alert("Please provide a title and content.");
+      return;
+    }
+
+    setIsUploadingFile(true);
+    try {
+      const parsedData = await parseMarkdown(noteContent, noteTitle + '.md');
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          title: noteTitle,
+          type: parsedData.type,
+          content_json: parsedData
+        })
+      });
+
+      if (response.ok) {
+        setIsUploadingNotes(false);
+        setNoteTitle('');
+        setNoteContent('');
+        fetchMyMaterials();
+        fetchCommunityMaterials();
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Failed to save note.");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !manualQuestion || manualOptions.some(o => !o)) {
@@ -275,7 +366,6 @@ const Dashboard = () => {
 
   const handleDailyAnswer = async (selectedAns: string) => {
     const question = dailyQuestions[currentDailyIndex];
-    const opts = JSON.parse(question.options_json || '[]');
     const isCorrect = selectedAns === question.correct_answer;
     
     // Record in DB
@@ -321,10 +411,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-cozy-bg text-cozy-text flex pb-20 md:pb-0 relative z-0">
-      {/* Background Overlay to ensure visibility */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.15] z-[-1]" style={{ backgroundImage: "url('/math-pattern.svg')", backgroundRepeat: 'repeat' }} />
       
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 bg-cozy-card border-r border-cozy-secondary/20 flex-col fixed inset-y-0 z-10">
         <div className="p-6 border-b border-cozy-secondary/20">
           <h2 className="text-xl font-bold text-cozy-primary flex items-center gap-2">
@@ -339,7 +427,6 @@ const Dashboard = () => {
         </nav>
 
         <div className="p-4 border-t border-cozy-secondary/20">
-          {/* Gamification Stats */}
           <div className="flex justify-between items-center bg-cozy-accent/50 p-3 rounded-xl mb-4">
             <div className="flex flex-col items-center flex-1 border-r border-cozy-secondary/20">
               <Flame className="w-5 h-5 text-orange-500 mb-1" />
@@ -353,7 +440,7 @@ const Dashboard = () => {
 
           <div className="flex items-center gap-3 p-3 bg-cozy-accent rounded-xl mb-4">
             <div className="w-10 h-10 bg-cozy-primary rounded-full flex items-center justify-center text-white font-bold">
-              {user?.username[0].toUpperCase()}
+              {user?.username?.[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold truncate text-cozy-text">{user?.username}</p>
@@ -366,25 +453,31 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto">
         <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4 pt-4 md:pt-0">
           <div>
             <h1 className="text-3xl font-bold text-cozy-text flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-8 h-8 md:hidden object-contain" />
-              Global Quiz Platform
+              Library
             </h1>
-            <p className="text-cozy-muted">Donate questions, play quizzes, earn points!</p>
+            <p className="text-cozy-muted">Manage your study materials and explore community quizzes.</p>
           </div>
-          <button 
-            onClick={() => setIsUploading(true)}
-            className="bg-cozy-primary text-white px-6 py-3 md:py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-cozy-primary/90 transition-all shadow-lg w-full md:w-auto"
-          >
-            <Plus size={20} /> Donate Question
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <button 
+              onClick={() => { setIsUploading(true); setUploadTab('form'); }}
+              className="bg-cozy-accent text-cozy-text border border-cozy-secondary/20 px-6 py-3 md:py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-cozy-secondary/10 transition-all shadow-sm w-full md:w-auto"
+            >
+              <Plus size={20} /> Donate Question
+            </button>
+            <button 
+              onClick={() => setIsUploadingNotes(true)}
+              className="bg-cozy-primary text-white px-6 py-3 md:py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-cozy-primary/90 transition-all shadow-lg w-full md:w-auto"
+            >
+              <UploadIcon size={20} /> Upload Notes
+            </button>
+          </div>
         </header>
 
-        {/* Mobile Gamification Stats Header */}
         <div className="md:hidden flex justify-around items-center bg-cozy-card border border-cozy-secondary/20 p-4 rounded-2xl mb-6 shadow-sm">
            <div className="flex flex-col items-center">
               <Flame className="w-6 h-6 text-orange-500 mb-1" />
@@ -418,7 +511,7 @@ const Dashboard = () => {
             </p>
             {activeTab !== 'community' && (
               <button 
-                onClick={() => setIsUploading(true)}
+                onClick={() => setIsUploadingNotes(true)}
                 className="bg-cozy-primary text-white px-8 py-3 rounded-xl font-bold"
               >
                 Get Started
@@ -441,7 +534,85 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Upload/Add Question Modal */}
+        {isUploadingNotes && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
+            <div className="bg-cozy-card w-full max-w-xl rounded-3xl p-6 md:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 border border-cozy-secondary/20 max-h-[90vh] overflow-y-auto">
+              <button 
+                onClick={() => setIsUploadingNotes(false)}
+                className="absolute top-4 right-4 md:top-6 md:right-6 p-2 hover:bg-cozy-accent rounded-full text-cozy-muted"
+              >
+                <X size={20} />
+              </button>
+              
+              <h2 className="text-2xl font-bold mb-6 text-cozy-text">Upload Study Notes</h2>
+
+              <div className="space-y-6">
+                <div 
+                  onClick={() => notesFileInputRef.current?.click()}
+                  className="border-2 border-dashed border-cozy-secondary/30 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:border-cozy-primary transition-colors cursor-pointer group bg-cozy-accent/20"
+                >
+                  <div className="w-12 h-12 bg-cozy-accent rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    {isUploadingFile ? (
+                      <Loader2 className="text-cozy-primary w-6 h-6 animate-spin" />
+                    ) : (
+                      <UploadIcon className="text-cozy-primary w-6 h-6" />
+                    )}
+                  </div>
+                  <p className="font-semibold text-cozy-text">
+                    {isUploadingFile ? "Processing..." : "Upload .md or .json file"}
+                  </p>
+                  <input 
+                    type="file" 
+                    ref={notesFileInputRef}
+                    className="hidden" 
+                    accept=".md,.json" 
+                    onChange={handleNoteFileUpload}
+                    disabled={isUploadingFile}
+                  />
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-cozy-secondary/20"></span></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-cozy-card px-2 text-cozy-muted font-bold">Or paste content</span></div>
+                </div>
+
+                <form onSubmit={handleNoteSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-cozy-muted mb-1">Title</label>
+                    <input 
+                      required
+                      type="text"
+                      value={noteTitle}
+                      onChange={(e) => setNoteTitle(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-cozy-secondary/20 bg-cozy-bg text-cozy-text focus:outline-none focus:border-cozy-primary"
+                      placeholder="e.g., Biology Chapter 1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-cozy-muted mb-1">Markdown Content</label>
+                    <textarea 
+                      required
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-cozy-secondary/20 bg-cozy-bg text-cozy-text resize-none focus:outline-none focus:border-cozy-primary font-mono text-sm"
+                      placeholder="# Your Topic\n\nContent here..."
+                      rows={8}
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isUploadingFile}
+                    className="w-full bg-cozy-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                  >
+                    {isUploadingFile ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-5 h-5" />}
+                    Save to My Library
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isUploading && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
             <div className="bg-cozy-card w-full max-w-xl rounded-3xl p-6 md:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 border border-cozy-secondary/20 max-h-[90vh] overflow-y-auto">
@@ -492,13 +663,13 @@ const Dashboard = () => {
                   onClick={() => setUploadTab('form')}
                   className={cn("pb-2 font-bold transition-colors", uploadTab === 'form' ? "text-cozy-primary border-b-2 border-cozy-primary" : "text-cozy-muted")}
                 >
-                  Quick Form
+                  Single MCQ
                 </button>
                 <button 
                   onClick={() => setUploadTab('file')}
                   className={cn("pb-2 font-bold transition-colors", uploadTab === 'file' ? "text-cozy-primary border-b-2 border-cozy-primary" : "text-cozy-muted")}
                 >
-                  Bulk Upload (.json/.md)
+                  Bulk MCQ Upload
                 </button>
               </div>
 
@@ -582,7 +753,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Daily Challenge Modal */}
         {showDailyChallenge && dailyQuestions.length > 0 && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[70] animate-in fade-in duration-300">
             <div className="bg-cozy-card w-full max-w-lg rounded-3xl shadow-2xl relative border border-cozy-secondary/20 overflow-hidden animate-in zoom-in-90 duration-300 delay-100">
@@ -631,7 +801,6 @@ const Dashboard = () => {
 
       </main>
 
-      {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-cozy-card border-t border-cozy-secondary/20 flex justify-around p-3 z-50 pb-safe">
         <MobileNavItem icon={<LayoutGrid size={24} />} label="Library" active onClick={() => {}} />
         <MobileNavItem icon={<Settings size={24} />} label="Settings" onClick={() => navigate('/settings')} />

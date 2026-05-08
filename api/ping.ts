@@ -24,7 +24,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     },
     debug: {
       hasUrl: !!rawUrl,
-      hasKey: !!(process.env.VITE_TURSOR_API_KEY || process.env.TURSO_AUTH_TOKEN),
+      hasKey: !!(process.env.VITE_TURSO_AUTH_TOKEN || process.env.VITE_TURSOR_API_KEY || process.env.TURSO_AUTH_TOKEN),
       protocol: rawUrl.split(':')[0],
       isLibsql: rawUrl.startsWith('libsql://'),
       willBeHttps: rawUrl.replace('libsql://', 'https://').startsWith('https://')

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, CheckCircle2, ArrowLeft, RotateCcw, Trophy, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, ArrowLeft, RotateCcw, Trophy, AlertCircle, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
 import type { StudyMaterial, StudySection, StudyFlashcard } from '../../lib/parser';
@@ -68,7 +68,7 @@ const StudyVisualizer = () => {
                 value="flashcards"
                 className="pb-2 px-4 font-bold text-cozy-muted data-[state=active]:text-cozy-primary data-[state=active]:border-b-2 data-[state=active]:border-cozy-primary transition-all"
               >
-                {isQuiz ? 'Quiz' : 'Flashcards'}
+                {isQuiz ? 'Quiz' : 'Notes'}
               </Tabs.Trigger>
             </Tabs.List>
             <Tabs.Content value="document" className="flex-1">
@@ -300,7 +300,7 @@ const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
       {/* Progress Bar */}
       <div className="w-full max-w-md">
         <div className="flex justify-between text-sm font-bold mb-2">
-          <span className="text-cozy-muted">Flashcard {currentIndex + 1} / {cards.length}</span>
+          <span className="text-cozy-muted">Note {currentIndex + 1} / {cards.length}</span>
           <span className="text-cozy-primary">{Math.round(progress)}%</span>
         </div>
         <div className="w-full bg-cozy-accent h-2 rounded-full overflow-hidden">
@@ -397,6 +397,18 @@ const FlashcardView = ({ cards }: { cards: StudyFlashcard[] }) => {
 };
 
 const DocumentView = ({ sections }: { sections: StudySection[] }) => {
+  if (sections.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
+        <div className="w-20 h-20 bg-cozy-accent rounded-full flex items-center justify-center mb-6">
+          <BookOpen className="text-cozy-primary w-10 h-10" />
+        </div>
+        <h2 className="text-2xl font-bold text-cozy-text mb-2">No sections found</h2>
+        <p className="text-cozy-muted max-w-sm">This document doesn't seem to have any readable sections. Try re-uploading with a different format.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto py-12 px-6 space-y-12">
       {sections.map((section, idx) => (

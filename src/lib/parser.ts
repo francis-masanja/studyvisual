@@ -126,7 +126,7 @@ export function parseJson(json: any, filename: string): StudyMaterial {
   // Title detection
   const title = json.title || filename.replace('.json', '');
 
-  const qKeys = ['question', 'q', 'Prompt', 'prompt', 'term', 'front', 'header', 'title', 'query', 'problem', 'task'];
+  const qKeys = ['question', 'q', 'topic', 'Prompt', 'prompt', 'term', 'front', 'header', 'title', 'query', 'problem', 'task'];
   const aKeys = ['answer', 'a', 'Response', 'response', 'definition', 'back', 'content', 'body', 'description', 'solution', 'explanation', 'result', 'correct_answer'];
   const optKeys = ['options', 'choices', 'answers', 'distractors'];
 
@@ -137,9 +137,10 @@ export function parseJson(json: any, filename: string): StudyMaterial {
     if (Array.isArray(obj)) {
       obj.forEach(item => searchCards(item));
     } else if (typeof obj === 'object' && obj !== null) {
-      // Specialized handling for "questions" array in the provided format
-      if (obj.questions && Array.isArray(obj.questions)) {
-        obj.questions.forEach((q: any) => {
+      // Specialized handling for "questions" or "flashcards" array in common formats
+      const listKey = obj.questions ? 'questions' : obj.flashcards ? 'flashcards' : null;
+      if (listKey && Array.isArray(obj[listKey])) {
+        obj[listKey].forEach((q: any) => {
           let opts: string[] | undefined = undefined;
           if (q.options && typeof q.options === 'object' && !Array.isArray(q.options)) {
              opts = Object.values(q.options).map(String);
@@ -155,14 +156,14 @@ export function parseJson(json: any, filename: string): StudyMaterial {
 
           cards.push({
             id: Math.random().toString(36).substring(2) + Date.now().toString(36),
-            question: q.question || q.q,
-            answer: String(ans),
+            question: q.question || q.topic || q.q,
+            answer: String(ans || ''),
             options: opts,
             rationale: q.rationale || q.explanation
           });
           if (opts && opts.length > 0) hasOptions = true;
         });
-        return; // Don't search deeper into this object
+        return;
       }
 
       let foundQ: string | null = null;
@@ -195,7 +196,6 @@ export function parseJson(json: any, filename: string): StudyMaterial {
           if (foundOpts.length > 0) hasOptions = true;
           break;
         } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-          // Handle { "A": "...", "B": "..." }
           foundOpts = Object.values(obj[key]).map(String);
           if (foundOpts.length > 0) hasOptions = true;
           break;
@@ -205,7 +205,6 @@ export function parseJson(json: any, filename: string): StudyMaterial {
       foundRationale = obj.rationale || obj.explanation;
 
       if (foundQ && foundA && foundQ !== foundA) {
-        // Special case: if A is just "A", "B", "C", "D" and we have options
         if (foundA.length === 1 && obj.options && typeof obj.options === 'object' && obj.options[foundA]) {
           foundA = obj.options[foundA];
         }
@@ -213,17 +212,20 @@ export function parseJson(json: any, filename: string): StudyMaterial {
         cards.push({ 
           id: Math.random().toString(36).substring(2) + Date.now().toString(36),
           question: foundQ, 
-          answer: foundA, 
+          answer: String(foundA), 
           options: foundOpts,
           rationale: foundRationale
         });
-      }} 
-      // 2. Fallback: If it's a simple key-value object where values are strings...
-
+      } else {
+        Object.values(obj).forEach(val => {
+          if (typeof val === 'object') searchCards(val);
+        });
+      }
+    }
+  };
 
   searchCards(json);
 
-  // Section detection (avoiding overlap with cards if possible)
   const potentialSections = json.sections || json.chapters || json.data;
   if (Array.isArray(potentialSections)) {
     potentialSections.forEach((s: any) => {
@@ -240,7 +242,6 @@ export function parseJson(json: any, filename: string): StudyMaterial {
     });
   }
 
-  // Determine type
   let type: 'document' | 'flashcards' | 'quiz' | 'mixed' = 'document';
   if (cards.length > 0) {
     if (sections.length > 0) type = 'mixed';
@@ -255,5 +256,3 @@ export function parseJson(json: any, filename: string): StudyMaterial {
     cards: cards.length > 0 ? cards : undefined
   };
 }
-}
-  
