@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">studyvisual</string>
+    <string name="title_activity_main">studyvisual</string>
+    <string name="package_name">com.studyvisual.app</string>
+    <string name="custom_url_scheme">com.studyvisual.app</string>
+</resources>
