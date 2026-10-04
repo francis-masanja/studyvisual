@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, ArrowLeft, RotateCcw, Trophy, 
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
 import type { StudyMaterial, StudySection, StudyFlashcard } from '../lib/parser';
+import { getQuizResults, saveQuizResults } from '../lib/api';
 import { cn } from '../lib/utils';
 import { useUser } from '../hooks/useUser';
 
@@ -98,7 +99,7 @@ const StudyVisualizer = () => {
             </Tabs.Content>
             <Tabs.Content value="flashcards" className="flex-1 flex flex-col">
               {isQuiz ? (
-                <QuizView key={id!} cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
+    <QuizView key={id!} cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} username={user?.username} />
               ) : (
                 <FlashcardView cards={material.cards!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
               )}
@@ -106,7 +107,7 @@ const StudyVisualizer = () => {
           </Tabs.Root>
         ) : hasCards ? (
           isQuiz ? (
-            <QuizView key={id!} cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
+            <QuizView key={id!} cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} username={user?.username} />
           ) : (
             <FlashcardView cards={material.cards!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
           )
@@ -118,24 +119,32 @@ const StudyVisualizer = () => {
   );
 };
 
-const loadCachedResults = (materialId: string): { [key: string]: boolean } => {
-  try {
-    const cached = localStorage.getItem(`quiz_results_${materialId}`);
-    return cached ? (JSON.parse(cached) as { [key: string]: boolean }) : {};
-  } catch {
-    return {};
-  }
-};
+  // Load persisted quiz results from the server
+  const loadCachedResults = async (username: string, materialId: string): Promise<{ [key: string]: boolean }> => {
+    try {
+      return await getQuizResults(username, materialId);
+    } catch {
+      return {};
+    }
+  };
 
-const QuizView = ({ cards, materialId, initialProgress = 0, onProgressUpdate }: { cards: StudyFlashcard[], materialId: string, initialProgress?: number, onProgressUpdate: (percentage: number) => void }) => {
+
+const QuizView = ({ cards, materialId, initialProgress = 0, onProgressUpdate, username }: { cards: StudyFlashcard[], materialId: string, initialProgress?: number, onProgressUpdate: (percentage: number) => void, username?: string }) => {
   const startingIndex = Math.min(cards.length - 1, Math.max(0, Math.floor((initialProgress / 100) * cards.length)));
   const [currentIndex, setCurrentIndex] = useState(startingIndex);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsInteractive] = useState(false);
   // cardId -> isCorrect, restored from cache (remounts when materialId changes)
-  const [results, setResults] = useState<{ [key: string]: boolean }>(() => loadCachedResults(materialId));
+    const [results, setResults] = useState<{ [key: string]: boolean }>({});
   const [showSummary, setShowSummary] = useState(false);
 
+  useEffect(() => {
+    if (!username) return;
+    (async () => {
+      const remote = await loadCachedResults(username, materialId);
+      setResults(remote);
+    })();
+  }, [username, materialId]);
   const handleAnswer = (option: string) => {
     if (isAnswered) return;
     const currentCard = cards[currentIndex];
@@ -146,12 +155,13 @@ const QuizView = ({ cards, materialId, initialProgress = 0, onProgressUpdate }: 
     
     const newResults = { ...results, [currentCard.id || currentIndex]: isCorrect };
     setResults(newResults);
-    localStorage.setItem(`quiz_results_${materialId}`, JSON.stringify(newResults));
-
+    // persist to server
+    if (username) saveQuizResults(username, materialId, newResults);
+    
     // Report Progress
     const percentage = ((Object.keys(newResults).length) / cards.length) * 100;
     onProgressUpdate(percentage);
-
+    
     // Update global score/streak
     if (isCorrect) {
       const currentScore = parseInt(localStorage.getItem('studyvisual_score') || '0');
@@ -174,12 +184,13 @@ const QuizView = ({ cards, materialId, initialProgress = 0, onProgressUpdate }: 
   };
 
   const resetQuiz = () => {
+    // Reset UI state only; server‑side reset endpoint can be added later.
+    setShowSummary(false);
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsInteractive(false);
-    setShowSummary(false);
     setResults({});
-    localStorage.removeItem(`quiz_results_${materialId}`);
+    // localStorage.removeItem(`quiz_results_${materialId}`);
   };
 
   if (showSummary) {
