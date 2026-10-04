@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle2, ArrowLeft, RotateCcw, Trophy, AlertCircle, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
-import type { StudyMaterial, StudySection, StudyFlashcard } from '../../lib/parser';
-import { cn } from '../../lib/utils';
-import { useUser } from '../../hooks/useUser';
+import type { StudyMaterial, StudySection, StudyFlashcard } from '../lib/parser';
+import { cn } from '../lib/utils';
+import { useUser } from '../hooks/useUser';
 
 const StudyVisualizer = () => {
   const { id } = useParams();
@@ -98,7 +98,7 @@ const StudyVisualizer = () => {
             </Tabs.Content>
             <Tabs.Content value="flashcards" className="flex-1 flex flex-col">
               {isQuiz ? (
-                <QuizView cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
+                <QuizView key={id!} cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
               ) : (
                 <FlashcardView cards={material.cards!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
               )}
@@ -106,7 +106,7 @@ const StudyVisualizer = () => {
           </Tabs.Root>
         ) : hasCards ? (
           isQuiz ? (
-            <QuizView cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
+            <QuizView key={id!} cards={material.cards!} materialId={id!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
           ) : (
             <FlashcardView cards={material.cards!} initialProgress={initialProgress} onProgressUpdate={handleProgressUpdate} />
           )
@@ -118,21 +118,23 @@ const StudyVisualizer = () => {
   );
 };
 
+const loadCachedResults = (materialId: string): { [key: string]: boolean } => {
+  try {
+    const cached = localStorage.getItem(`quiz_results_${materialId}`);
+    return cached ? (JSON.parse(cached) as { [key: string]: boolean }) : {};
+  } catch {
+    return {};
+  }
+};
+
 const QuizView = ({ cards, materialId, initialProgress = 0, onProgressUpdate }: { cards: StudyFlashcard[], materialId: string, initialProgress?: number, onProgressUpdate: (percentage: number) => void }) => {
   const startingIndex = Math.min(cards.length - 1, Math.max(0, Math.floor((initialProgress / 100) * cards.length)));
   const [currentIndex, setCurrentIndex] = useState(startingIndex);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsInteractive] = useState(false);
-  const [results, setResults] = useState<{ [key: string]: boolean }>({}); // cardId -> isCorrect
+  // cardId -> isCorrect, restored from cache (remounts when materialId changes)
+  const [results, setResults] = useState<{ [key: string]: boolean }>(() => loadCachedResults(materialId));
   const [showSummary, setShowSummary] = useState(false);
-
-  // Load state from cache
-  useEffect(() => {
-    const cached = localStorage.getItem(`quiz_results_${materialId}`);
-    if (cached) {
-      setResults(JSON.parse(cached));
-    }
-  }, [materialId]);
 
   const handleAnswer = (option: string) => {
     if (isAnswered) return;

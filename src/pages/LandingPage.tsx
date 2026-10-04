@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Upload, Shield, Zap, Smartphone, Monitor } from 'lucide-react';
-import { AuthDialog } from '../ui/AuthDialog';
-import { useUser } from '../../hooks/useUser';
+import { AuthDialog } from '../components/ui/AuthDialog';
+import { useUser } from '../hooks/useUser';
 
 const LandingPage = () => {
   const [isMobile, setIsMobile] = useState(false);

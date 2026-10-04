@@ -1,10 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './components/layout/LandingPage';
-import Dashboard from './components/layout/Dashboard';
-import Settings from './components/layout/Settings';
-import StudyVisualizer from './components/visualizer/StudyVisualizer';
+import LandingPage from './pages/LandingPage';
+import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
+import StudyVisualizer from './features/StudyVisualizer';
 import { UserProvider, useUser } from './hooks/useUser';
-import './App.css';
 
 const AppRoutes = () => {
   const { user } = useUser();

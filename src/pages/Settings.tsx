@@ -1,8 +1,8 @@
 import React from 'react';
-import { useUser, type Theme } from '../../hooks/useUser';
+import { useUser, type Theme } from '../hooks/useUser';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutGrid, Settings as SettingsIcon, Moon, Sun, Cloud, Heart, ArrowLeft } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '../lib/utils';
 
 const Settings = () => {
   const { user, logout, theme, setTheme } = useUser();

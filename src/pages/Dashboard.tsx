@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../hooks/useUser';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Plus, FileText, LayoutGrid, Settings, Upload as UploadIcon, X, Loader2, Users, BookOpen, Layers, Trash2, Flame, Trophy, Target } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { parseMarkdown, parseJson } from '../../lib/parser';
-
-interface Material {
-  id: string;
-  title: string;
-  type: 'document' | 'flashcards' | 'quiz' | 'mixed';
-  completion_percentage?: number | null;
-  author?: string;
-}
+import { cn } from '../lib/utils';
+import { parseMarkdown, parseJson } from '../lib/parser';
+import {
+  getMyMaterials,
+  getCommunityMaterials,
+  getCategories,
+  getDailyChallenge,
+  type Material,
+  type Category,
+  type DailyQuestion,
+} from '../lib/api';
 
 type TabType = 'notes' | 'quizzes' | 'community';
 
@@ -22,15 +23,15 @@ const Dashboard = () => {
   // Data States
   const [myMaterials, setMyMaterials] = useState<Material[]>([]);
   const [communityMaterials, setCommunityMaterials] = useState<Material[]>([]);
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('notes');
   
   // Gamification States
-  const [streak, setStreak] = useState(0);
-  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(() => parseInt(localStorage.getItem('studyvisual_streak') || '0', 10));
+  const [score, setScore] = useState(() => parseInt(localStorage.getItem('studyvisual_score') || '0', 10));
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
-  const [dailyQuestions, setDailyQuestions] = useState<any[]>([]);
+  const [dailyQuestions, setDailyQuestions] = useState<DailyQuestion[]>([]);
   const [currentDailyIndex, setCurrentDailyIndex] = useState(0);
   const [dailyResults, setDailyResults] = useState<{correct: number, wrong: number, totalPoints: number}>({ correct: 0, wrong: 0, totalPoints: 0 });
   const [showDailySummary, setShowDailySummary] = useState(false);
@@ -55,84 +56,54 @@ const Dashboard = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
 
-  // --- API Functions ---
-  const fetchMyMaterials = async () => {
+  // --- Reload helpers (used by event handlers; effects call the api module directly) ---
+  const reloadMyMaterials = () => {
     if (!user) return;
-    try {
-      const res = await fetch(`/api/materials?username=${user.username}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.materials) {
-        setMyMaterials(data.materials);
-      }
-    } catch (error) {
-      console.error("Error fetching my materials:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    getMyMaterials(user.username)
+      .then(setMyMaterials)
+      .catch(error => console.error("Error fetching my materials:", error))
+      .finally(() => setIsLoading(false));
   };
 
-  const fetchCommunityMaterials = async () => {
-    try {
-      const res = await fetch(`/api/materials?community=true`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.materials) {
-        setCommunityMaterials(data.materials);
-      }
-    } catch (error) {
-      console.error("Error fetching community materials:", error);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/categories');
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data.categories);
-        if (data.categories.length > 0) setSelectedCategoryId(data.categories[0].id);
-      }
-    } catch(e) {
-      console.error(e);
-    }
+  const reloadCommunityMaterials = () => {
+    getCommunityMaterials()
+      .then(setCommunityMaterials)
+      .catch(error => console.error("Error fetching community materials:", error));
   };
 
   // --- Effects ---
   useEffect(() => {
-    fetchMyMaterials();
-    fetchCommunityMaterials();
-    fetchCategories();
+    if (user) {
+      getMyMaterials(user.username)
+        .then(setMyMaterials)
+        .catch(error => console.error("Error fetching my materials:", error))
+        .finally(() => setIsLoading(false));
+    }
+    getCommunityMaterials()
+      .then(setCommunityMaterials)
+      .catch(error => console.error("Error fetching community materials:", error));
+    getCategories()
+      .then(cats => {
+        setCategories(cats);
+        if (cats.length > 0) setSelectedCategoryId(cats[0].id);
+      })
+      .catch(error => console.error("Error fetching categories:", error));
   }, [user]);
 
   useEffect(() => {
-    // Load gamification from cache
-    const s = parseInt(localStorage.getItem('studyvisual_streak') || '0');
-    const sc = parseInt(localStorage.getItem('studyvisual_score') || '0');
-    setStreak(s);
-    setScore(sc);
+    // Daily challenge is available once per day
+    if (!user) return;
+    const lastPlayed = localStorage.getItem('studyvisual_last_played');
+    if (lastPlayed === new Date().toDateString()) return;
 
-    // Check Daily Challenge
-    const checkDaily = async () => {
-      if (!user) return;
-      const lastPlayed = localStorage.getItem('studyvisual_last_played');
-      const today = new Date().toDateString();
-      if (lastPlayed !== today) {
-        try {
-          const res = await fetch(`/api/daily-challenge?username=${user.username}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.questions && data.questions.length > 0) {
-              setDailyQuestions(data.questions);
-              setShowDailyChallenge(true);
-            }
-          }
-        } catch(e) {
-          console.error("Daily challenge fetch error:", e);
+    getDailyChallenge(user.username)
+      .then(questions => {
+        if (questions.length > 0) {
+          setDailyQuestions(questions);
+          setShowDailyChallenge(true);
         }
-      }
-    };
-    checkDaily();
+      })
+      .catch(error => console.error("Daily challenge fetch error:", error));
   }, [user]);
 
   // --- Handlers ---
@@ -168,8 +139,8 @@ const Dashboard = () => {
       });
 
       if (response.ok) {
-        fetchMyMaterials();
-        fetchCommunityMaterials();
+        reloadMyMaterials();
+        reloadCommunityMaterials();
       } else {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
@@ -221,8 +192,8 @@ const Dashboard = () => {
 
         if (response.ok) {
           setIsUploading(false);
-          fetchMyMaterials();
-          fetchCommunityMaterials();
+          reloadMyMaterials();
+          reloadCommunityMaterials();
         }
       } catch (error) {
         console.error("Upload failed:", error);
@@ -268,8 +239,8 @@ const Dashboard = () => {
 
         if (response.ok) {
           setIsUploadingNotes(false);
-          fetchMyMaterials();
-          fetchCommunityMaterials();
+          reloadMyMaterials();
+          reloadCommunityMaterials();
         }
       } catch (error) {
         console.error("Note upload failed:", error);
@@ -308,8 +279,8 @@ const Dashboard = () => {
         setIsUploadingNotes(false);
         setNoteTitle('');
         setNoteContent('');
-        fetchMyMaterials();
-        fetchCommunityMaterials();
+        reloadMyMaterials();
+        reloadCommunityMaterials();
       }
     } catch(err) {
       console.error(err);
@@ -354,8 +325,8 @@ const Dashboard = () => {
       });
       if (response.ok) {
         setIsUploading(false);
-        fetchMyMaterials();
-        fetchCommunityMaterials();
+        reloadMyMaterials();
+        reloadCommunityMaterials();
         setManualQuestion('');
         setManualOptions(['', '', '', '']);
         setManualCorrect(0);
@@ -591,6 +562,13 @@ const Dashboard = () => {
                   />
                 </div>
 
+                <p className="text-xs text-cozy-muted text-center -mt-2">
+                  Need the format?{' '}
+                  <a href="/template.md" download className="text-cozy-primary font-semibold underline underline-offset-2 hover:opacity-80">Markdown template</a>
+                  {' · '}
+                  <a href="/template.json" download className="text-cozy-primary font-semibold underline underline-offset-2 hover:opacity-80">JSON template</a>
+                </p>
+
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-cozy-secondary/20"></span></div>
                   <div className="relative flex justify-center text-xs uppercase"><span className="bg-cozy-card px-2 text-cozy-muted font-bold">Or paste content</span></div>
@@ -694,29 +672,39 @@ const Dashboard = () => {
               </div>
 
               {uploadTab === 'file' ? (
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-cozy-secondary/30 rounded-2xl p-8 md:p-12 flex flex-col items-center justify-center text-center hover:border-cozy-primary transition-colors cursor-pointer group bg-cozy-accent/20"
-                >
-                  <div className="w-16 h-16 bg-cozy-accent rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    {isUploadingFile ? (
-                      <Loader2 className="text-cozy-primary w-8 h-8 animate-spin" />
-                    ) : (
-                      <UploadIcon className="text-cozy-primary w-8 h-8" />
-                    )}
+                <div>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-cozy-secondary/30 rounded-2xl p-8 md:p-12 flex flex-col items-center justify-center text-center hover:border-cozy-primary transition-colors cursor-pointer group bg-cozy-accent/20"
+                  >
+                    <div className="w-16 h-16 bg-cozy-accent rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      {isUploadingFile ? (
+                        <Loader2 className="text-cozy-primary w-8 h-8 animate-spin" />
+                      ) : (
+                        <UploadIcon className="text-cozy-primary w-8 h-8" />
+                      )}
+                    </div>
+                    <p className="font-semibold text-lg text-cozy-text">
+                      {isUploadingFile ? "Processing..." : "Click to bulk upload"}
+                    </p>
+                    <p className="text-sm text-cozy-muted mt-2">Markdown (.md) or JSON (.json)</p>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      className="hidden" 
+                      accept=".md,.json" 
+                      onChange={handleFileUpload}
+                      disabled={isUploadingFile}
+                    />
                   </div>
-                  <p className="font-semibold text-lg text-cozy-text">
-                    {isUploadingFile ? "Processing..." : "Click to bulk upload"}
+                  <p className="text-xs text-cozy-muted text-center mt-3">
+                    Need the format?{' '}
+                    <a href="/template-quiz.json" download className="text-cozy-primary font-semibold underline underline-offset-2 hover:opacity-80">Quiz JSON</a>
+                    {' · '}
+                    <a href="/template.json" download className="text-cozy-primary font-semibold underline underline-offset-2 hover:opacity-80">Notes JSON</a>
+                    {' · '}
+                    <a href="/template.md" download className="text-cozy-primary font-semibold underline underline-offset-2 hover:opacity-80">Markdown</a>
                   </p>
-                  <p className="text-sm text-cozy-muted mt-2">Markdown (.md) or JSON (.json)</p>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef}
-                    className="hidden" 
-                    accept=".md,.json" 
-                    onChange={handleFileUpload}
-                    disabled={isUploadingFile}
-                  />
                 </div>
               ) : (
                 <form onSubmit={handleManualSubmit} className="space-y-4">
