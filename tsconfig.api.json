@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/api.tsbuildinfo",
+    "types": ["node"],
+    "lib": ["ES2023"],
+    "noEmit": true
+  },
+  "include": ["api/**/*.ts", "scripts/**/*.ts", "capacitor.config.ts"]
+}
