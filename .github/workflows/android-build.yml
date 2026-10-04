@@ -3,6 +3,19 @@ name: Android Build
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'android/**'
+      - 'src/**'
+      - 'public/**'
+      - 'api/**'
+      - 'scripts/**'
+      - 'index.html'
+      - 'capacitor.config.ts'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/android-build.yml'
   workflow_dispatch:
 
 jobs:
@@ -21,7 +34,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Web Project
         run: npm run build
