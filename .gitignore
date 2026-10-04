@@ -28,7 +28,18 @@ dist-ssr
 
 # Environment variables
 .env
+.env.local
 .env.production
 
 # TypeScript
 *.tsbuildinfo
+
+# Manual snapshot backups (never commit; git history is the backup)
+.backup/
+
+# Test coverage
+coverage/
+
+# Mobile build outputs
+ios/App/build
+*.apk
