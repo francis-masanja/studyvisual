@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db.js';
+import { db, errorMessage } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const database = db;
     // 1. Get or create user
-    let userResult = await database.execute({
+    const userResult = await database.execute({
       sql: "SELECT id FROM users WHERE username = ?",
       args: [username]
     });
@@ -58,11 +58,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ success: true, materialId });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Upload error:', error);
     return res.status(500).json({ 
       error: 'Upload Failed', 
-      message: error.message 
+      message: errorMessage(error) 
     });
   }
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client/web';
+import type { InStatement } from '@libsql/client';
 
 export const getDb = () => {
   let url = (process.env.VITE_TURSO_URL || process.env.TURSO_DATABASE_URL || '').trim();
@@ -19,12 +20,15 @@ export const getDb = () => {
   });
 };
 
+export const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 export const db = {
-  execute: (args: any) => {
+  execute: (stmt: InStatement) => {
     try {
-      return getDb().execute(args);
-    } catch (e: any) {
-      console.error("DB Execute Error:", e.message);
+      return getDb().execute(stmt);
+    } catch (e) {
+      console.error("DB Execute Error:", e instanceof Error ? e.message : String(e));
       throw e;
     }
   }

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db.js';
+import { db, errorMessage } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -22,8 +22,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     return res.status(200).json({ success: true, id, name });
-  } catch (error: any) {
-    if (error.message.includes('UNIQUE')) {
+  } catch (error) {
+    if (errorMessage(error).includes('UNIQUE')) {
        return res.status(400).json({ error: 'Category already exists' });
     }
     console.error('Create category error:', error);

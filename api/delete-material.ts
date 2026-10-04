@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db.js';
+import { db, errorMessage } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'DELETE') {
@@ -38,11 +38,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     return res.status(200).json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Delete error:', error);
     return res.status(500).json({ 
       error: 'Delete Failed', 
-      message: error.message 
+      message: errorMessage(error) 
     });
   }
 }

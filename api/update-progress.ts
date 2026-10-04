@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db.js';
+import { db, errorMessage } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -33,8 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     return res.status(200).json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Update progress error:', error);
-    return res.status(500).json({ error: 'Internal server error', message: error.message });
+    return res.status(500).json({ error: 'Internal server error', message: errorMessage(error) });
   }
 }

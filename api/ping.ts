@@ -3,16 +3,16 @@ import { db } from './db.js';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   const rawUrl = process.env.VITE_TURSO_URL || process.env.TURSO_DATABASE_URL || '';
-  let dbStatus = 'pending';
-  let dbError = null;
+  let dbStatus: 'connected' | 'failed';
+  let dbError: string | null = null;
 
   try {
     // Try a tiny "heartbeat" query to Turso
     await db.execute("SELECT 1");
     dbStatus = 'connected';
-  } catch (e: any) {
+  } catch (e) {
     dbStatus = 'failed';
-    dbError = e.message;
+    dbError = e instanceof Error ? e.message : String(e);
   }
   
   return res.status(200).json({ 

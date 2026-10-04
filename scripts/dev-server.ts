@@ -2,7 +2,9 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+import type { Request, Response } from 'express';
 import cors from 'cors';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import uploadHandler from '../api/upload.js';
 import materialsHandler from '../api/materials.js';
 import materialHandler from '../api/material.js';
@@ -25,9 +27,11 @@ app.use((req, _res, next) => {
 });
 
 // Mock Vercel req/res objects for the existing handlers
-const wrapHandler = (handler: any) => async (req: any, res: any) => {
+type VercelHandler = (req: VercelRequest, res: VercelResponse) => unknown;
+
+const wrapHandler = (handler: VercelHandler) => async (req: Request, res: Response) => {
   try {
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
   } catch (error) {
     console.error("Local Server Error:", error);
     if (!res.headersSent) {

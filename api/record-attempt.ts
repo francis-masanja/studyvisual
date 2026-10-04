@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     return res.status(200).json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Record attempt error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }

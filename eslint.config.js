@@ -18,5 +18,9 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Context hooks (useUser) are exempt: they are not components
+      'react-refresh/only-export-components': ['error', { allowExportNames: ['useUser'] }],
+    },
   },
 ])

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db.js';
+import { db, errorMessage } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -45,12 +45,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ material });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Fetch error:', error);
     return res.status(500).json({ 
       error: 'Internal server error', 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+      message: errorMessage(error),
+      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined 
     });
   }
 }

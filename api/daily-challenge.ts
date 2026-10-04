@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './db.js';
+import type { InValue } from '@libsql/client';
+import { db, errorMessage } from './db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -31,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       WHERE q.options_json IS NOT NULL AND q.options_json != '[]' AND q.options_json != ''
     `;
     
-    let args: any[] = [];
+    const args: InValue[] = [];
     if (userId) {
       query += ` AND q.id NOT IN (SELECT question_id FROM question_attempts WHERE user_id = ?) `;
       args.push(userId);
@@ -51,11 +52,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ questions: result.rows });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Fetch daily challenge error:', error);
     return res.status(500).json({ 
       error: 'Internal server error', 
-      message: error.message 
+      message: errorMessage(error) 
     });
   }
 }
