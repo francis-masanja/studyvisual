@@ -39,14 +39,14 @@ jobs:
       - name: Build Web Project
         run: npm run build
 
-- name: Sync Capacitor iOS
-  run: |
-    npx cap sync ios
-    # Verify the workspace was created
-    if [ ! -d "ios/App/App.xcworkspace" ]; then
-      echo "ERROR: App.xcworkspace was not created"
-      exit 1
-    fi
+      - name: Sync Capacitor iOS
+        run: |
+          npx cap sync ios
+          # Verify the workspace was created
+          if [ ! -d "ios/App/App.xcworkspace" ]; then
+            echo "ERROR: App.xcworkspace was not created"
+            exit 1
+          fi
 
       - name: Build iOS App (Archive)
         run: |
