@@ -43,3 +43,6 @@ coverage/
 # Mobile build outputs
 ios/App/build
 *.apk
+
+# Playwright test artifacts
+.playwright-mcp/
