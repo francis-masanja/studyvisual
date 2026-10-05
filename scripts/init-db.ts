@@ -66,10 +66,63 @@ async function init() {
         options_json TEXT,
         correct_answer TEXT,
         rationale TEXT,
+        material_id TEXT,
+        visibility TEXT DEFAULT 'community',
         FOREIGN KEY (category_id) REFERENCES categories(id),
         FOREIGN KEY (user_id) REFERENCES users(id)
       );
     `);
+
+    const questionColumns = await client.execute('PRAGMA table_info(questions)');
+    const existingColumns = new Set(questionColumns.rows.map(row => String(row.name)));
+    if (!existingColumns.has('material_id')) {
+      await client.execute('ALTER TABLE questions ADD COLUMN material_id TEXT');
+    }
+    if (!existingColumns.has('visibility')) {
+      await client.execute("ALTER TABLE questions ADD COLUMN visibility TEXT DEFAULT 'community'");
+    }
+
+    const unlinked = await client.execute('SELECT id FROM questions WHERE material_id IS NULL');
+    const unlinkedIds = new Set(unlinked.rows.map(row => String(row.id)));
+    if (unlinkedIds.size > 0) {
+      const materialsForBackfill = await client.execute('SELECT id, content_json FROM materials');
+      const pairs: Array<[string, string]> = [];
+      for (const row of materialsForBackfill.rows) {
+        let cards: Array<{ id?: unknown }> = [];
+        try {
+          const parsed = JSON.parse(String(row.content_json ?? '{}')) as { cards?: Array<{ id?: unknown }> };
+          cards = Array.isArray(parsed.cards) ? parsed.cards : [];
+        } catch {
+          continue;
+        }
+        for (const card of cards) {
+          if (!card || typeof card.id !== 'string' || !unlinkedIds.has(card.id)) continue;
+          pairs.push([card.id, String(row.id)]);
+        }
+      }
+      let linkedQuestions = 0;
+      for (let i = 0; i < pairs.length; i += 100) {
+        const chunk = pairs.slice(i, i + 100);
+        const update = await client.execute({
+          sql: `UPDATE questions SET material_id = CASE id ${chunk.map(() => 'WHEN ? THEN ?').join(' ')} END WHERE id IN (${chunk.map(() => '?').join(', ')})`,
+          args: [...chunk.flatMap(([questionId, materialId]) => [questionId, materialId]), ...chunk.map(([questionId]) => questionId)]
+        });
+        linkedQuestions += update.rowsAffected;
+      }
+      if (linkedQuestions > 0) {
+        console.log(`Linked ${linkedQuestions} question(s) back to their material(s).`);
+      }
+    }
+
+    await client.execute(
+      'DELETE FROM question_attempts WHERE question_id IN (SELECT id FROM questions WHERE material_id IS NOT NULL AND material_id NOT IN (SELECT id FROM materials))'
+    );
+    const orphanedQuestions = await client.execute(
+      'DELETE FROM questions WHERE material_id IS NOT NULL AND material_id NOT IN (SELECT id FROM materials)'
+    );
+    if (orphanedQuestions.rowsAffected > 0) {
+      console.log(`Removed ${orphanedQuestions.rowsAffected} orphaned question(s) from deleted materials.`);
+    }
 
     await client.execute(`
       CREATE TABLE IF NOT EXISTS question_attempts (
@@ -83,8 +136,55 @@ async function init() {
       );
     `);
 
+    // Account-synced score/streak (survives localStorage clears and devices)
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS user_stats (
+        user_id TEXT PRIMARY KEY,
+        score INTEGER DEFAULT 0,
+        streak INTEGER DEFAULT 0,
+        last_played TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    `);
+
+    // In-progress daily challenge so a reload resumes where the user stopped
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS challenge_sessions (
+        user_id TEXT,
+        day TEXT,
+        question_ids TEXT,
+        answers TEXT,
+        current_index INTEGER DEFAULT 0,
+        finished INTEGER DEFAULT 0,
+        PRIMARY KEY (user_id, day),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    `);
+
+    // Per-material quiz card results, synced to the account
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS quiz_results (
+        user_id TEXT,
+        material_id TEXT,
+        results_json TEXT,
+        PRIMARY KEY (user_id, material_id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    `);
+
     // Add some default categories
-    const initialCategories = ['Science', 'Technology', 'Engineering', 'Mathematics', 'Biology', 'Physics', 'History', 'Other'];
+    const initialCategories = [
+      'Operating Systems',
+      'Computer Architecture & Embedded Systems',
+      'Data Structures & Algorithms',
+      'Programming & Languages',
+      'Computer Networks',
+      'Cyber Security',
+      'Artificial Intelligence',
+      'Indian Knowledge System',
+      'Mathematics',
+      'General Knowledge',
+    ];
     for (const cat of initialCategories) {
       await client.execute({
         sql: "INSERT OR IGNORE INTO categories (id, name) VALUES (?, ?)",

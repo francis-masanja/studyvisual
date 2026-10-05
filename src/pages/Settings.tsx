@@ -1,7 +1,7 @@
 import React from 'react';
 import { useUser, type Theme } from '../hooks/useUser';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, LayoutGrid, Settings as SettingsIcon, Moon, Sun, Cloud, Heart, ArrowLeft } from 'lucide-react';
+import { LogOut, LayoutGrid, Settings as SettingsIcon, Moon, Sun, Cloud, Heart, ArrowLeft, Target } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const Settings = () => {
@@ -28,6 +28,11 @@ const Settings = () => {
             icon={<LayoutGrid size={20} />} 
             label="My Library" 
             onClick={() => navigate('/dashboard')}
+          />
+          <SidebarItem 
+            icon={<Target size={20} />} 
+            label="Practice" 
+            onClick={() => navigate('/practice')}
           />
           <SidebarItem 
             icon={<SettingsIcon size={20} />} 
@@ -121,6 +126,7 @@ const Settings = () => {
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-cozy-card border-t border-cozy-secondary/20 flex justify-around p-3 z-50 pb-safe">
         <MobileNavItem icon={<LayoutGrid size={24} />} label="Library" onClick={() => navigate('/dashboard')} />
+        <MobileNavItem icon={<Target size={24} />} label="Practice" onClick={() => navigate('/practice')} />
         <MobileNavItem icon={<SettingsIcon size={24} />} label="Settings" active onClick={() => {}} />
       </nav>
     </div>

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { db } from './db.js';
+import { isLlmConfigured } from './llm.js';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   const rawUrl = process.env.VITE_TURSO_URL || process.env.TURSO_DATABASE_URL || '';
@@ -21,6 +22,9 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     database: {
       connection: dbStatus,
       error: dbError
+    },
+    ai: {
+      configured: isLlmConfigured()
     },
     debug: {
       hasUrl: !!rawUrl,

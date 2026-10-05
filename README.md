@@ -75,6 +75,9 @@ docs/api.md           API endpoint reference
 | `VITE_TURSO_URL` | LibSQL URL (`libsql://…` or `https://…`) |
 | `VITE_TURSO_AUTH_TOKEN` | Auth token for Turso |
 | `VITE_TURSOR_API_KEY` | Fallback name for the auth token (legacy setups) |
+| `OLLAMA_BASE_URL` | Optional — Ollama or OpenAI-compatible endpoint; enables AI features |
+| `OLLAMA_MODEL` | Optional — model name (default `llama3.2`) |
+| `OLLAMA_API_KEY` | Optional — switches to OpenAI-compatible mode |
 
 See [docs/api.md](docs/api.md) for endpoints, request/response shapes, and the database schema.
 

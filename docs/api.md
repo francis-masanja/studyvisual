@@ -86,6 +86,7 @@ Body: `{ "name": "string" }` → `{ "success": true, "id", "name" }`.
 | Query | Description |
 | --- | --- |
 | `username` | Excludes questions already attempted by the user; falls back to unattempted/all questions |
+| `categories` | Comma-separated category IDs to include (optional) |
 
 Response: `{ "questions": [ { "id", "question_text", "options_json", "correct_answer", "rationale", ... } ] }`.
 
@@ -93,6 +94,72 @@ Response: `{ "questions": [ { "id", "question_text", "options_json", "correct_an
 
 Body: `{ "username", "questionId", "isCorrect" }` → `{ "success": true }`.
 Upserts into `question_attempts` (one row per user/question pair).
+
+### `GET|POST /api/user-stats`
+
+Account-synced score/streak (survives localStorage clears and devices).
+
+- `GET ?username=` → `{ "score", "streak", "lastPlayed" }`
+- `POST` body `{ "username", "score"?, "streak"?, "lastPlayed"? }` → `{ "success": true, ...stats }` (partial upsert)
+
+### `GET|POST /api/challenge-session`
+
+Today's in-progress daily challenge so a reload resumes where the user stopped.
+
+- `GET ?username=&day=` (day = `YYYY-MM-DD`) → `{ "session": { "questionIds", "answers", "currentIndex", "finished" } | null }`
+- `POST` body `{ "username", "day", "questionIds", "answers", "currentIndex", "finished" }` → `{ "success": true }`
+
+### `GET|POST /api/quiz-results`
+
+Per-material quiz card results, synced to the account.
+
+- `GET ?username=&materialId=` → `{ "results": { "<cardId>": true|false } }`
+- `POST` body `{ "username", "materialId", "results" }` → `{ "success": true }`
+
+### `GET /api/questions`
+
+Question bank with filters and pagination.
+
+| Query | Description |
+| --- | --- |
+| `username` | Enables the `status` filter and returns `attempt_correct` per question |
+| `category` | Category ID to include |
+| `status` | `all` (default), `unattempted`, `wrong`, `correct` |
+| `search` | Case-insensitive substring match on `question_text` |
+| `ids` | Comma-separated question IDs (max 50) |
+| `limit` / `offset` | Page size (1–50, default 20) and offset |
+
+Response: `{ "questions": [ { "id", "question_text", "options_json", "correct_answer", "rationale", "category_id", "category_name", "attempt_correct" } ], "total", "limit", "offset" }`.
+
+### `POST /api/ai-generate`
+
+Requires AI configuration (see below). Body `mode` selects the operation:
+
+| Mode | Body | Response |
+| --- | --- | --- |
+| `questions` | `notes` (required), `title?`, `count?` (1–15) | `{ "cards": [ { "question", "options", "answer", "rationale" } ] }` |
+| `repair` | `rawText` (required), `kind`: `markdown` \| `json` | `{ "fixedText" }` |
+| `fill` | `username` (required), `categoryId?` / `categoryName?`, `count?` | `{ "inserted", "cards" }` — generates and stores questions in the bank |
+
+### `POST /api/ai-explain`
+
+Body: `{ "question", "options"?, "selected"?, "correct"?, "rationale"?, "category"? }` → `{ "explanation" }`.
+
+### `POST /api/ai-chat`
+
+Body: `{ "message", "history"?: [ { "role": "user"|"assistant", "content" } ], "context"?: { "title"?, "content"? } }` → `{ "reply" }`.
+
+#### AI configuration
+
+AI endpoints return `502` until these are set in `.env`:
+
+| Variable | Purpose |
+| --- | --- |
+| `OLLAMA_BASE_URL` | Ollama (`http://127.0.0.1:11434`) or any OpenAI-compatible base URL |
+| `OLLAMA_MODEL` | Model name (default `llama3.2`) |
+| `OLLAMA_API_KEY` | Optional — presence switches to OpenAI-compatible `/v1/chat/completions` mode |
+
+`GET /api/ping` reports `{ "ai": { "configured": boolean } }`.
 
 ## Database schema
 
@@ -106,6 +173,9 @@ Created by `npm run db:init` (see `scripts/init-db.ts`):
 | `categories` | `id` PK, `name` UNIQUE |
 | `questions` | `id` PK, `category_id` FK, `user_id` FK, `question_text`, `options_json`, `correct_answer`, `rationale` |
 | `question_attempts` | `user_id` + `question_id` PK, `is_correct`, `attempted_at` |
+| `user_stats` | `user_id` PK, `score`, `streak`, `last_played` |
+| `challenge_sessions` | `user_id` + `day` PK, `question_ids`, `answers`, `current_index`, `finished` |
+| `quiz_results` | `user_id` + `material_id` PK, `results_json` |
 
 ## Upload formats
 

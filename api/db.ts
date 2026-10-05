@@ -23,6 +23,25 @@ export const getDb = () => {
 export const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
+/** Find (or lazily create) the user row for a username; returns its id. */
+export const ensureUser = async (username: string): Promise<string> => {
+  const existing = await db.execute({ sql: 'SELECT id FROM users WHERE username = ?', args: [username] });
+  if (existing.rows.length > 0) {
+    return String(existing.rows[0].id);
+  }
+  const id = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  try {
+    await db.execute({ sql: 'INSERT INTO users (id, username) VALUES (?, ?)', args: [id, username] });
+  } catch {
+    const again = await db.execute({ sql: 'SELECT id FROM users WHERE username = ?', args: [username] });
+    if (again.rows.length > 0) {
+      return String(again.rows[0].id);
+    }
+    throw new Error(`Could not create user "${username}"`);
+  }
+  return id;
+};
+
 export const db = {
   execute: (stmt: InStatement) => {
     try {

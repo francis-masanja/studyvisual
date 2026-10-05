@@ -15,6 +15,13 @@ import createCategoryHandler from '../api/create-category.js';
 import recordAttemptHandler from '../api/record-attempt.js';
 import pingHandler from '../api/ping.js';
 import updateProgressHandler from '../api/update-progress.js';
+import userStatsHandler from '../api/user-stats.js';
+import challengeSessionHandler from '../api/challenge-session.js';
+import quizResultsHandler from '../api/quiz-results.js';
+import questionsHandler from '../api/questions.js';
+import aiGenerateHandler from '../api/ai-generate.js';
+import aiExplainHandler from '../api/ai-explain.js';
+import aiChatHandler from '../api/ai-chat.js';
 
 const app = express();
 app.use(cors());
@@ -50,6 +57,16 @@ app.post('/api/create-category', wrapHandler(createCategoryHandler));
 app.post('/api/record-attempt', wrapHandler(recordAttemptHandler));
 app.post('/api/update-progress', wrapHandler(updateProgressHandler));
 app.get('/api/ping', wrapHandler(pingHandler));
+app.get('/api/user-stats', wrapHandler(userStatsHandler));
+app.post('/api/user-stats', wrapHandler(userStatsHandler));
+app.get('/api/challenge-session', wrapHandler(challengeSessionHandler));
+app.post('/api/challenge-session', wrapHandler(challengeSessionHandler));
+app.get('/api/quiz-results', wrapHandler(quizResultsHandler));
+app.post('/api/quiz-results', wrapHandler(quizResultsHandler));
+app.get('/api/questions', wrapHandler(questionsHandler));
+app.post('/api/ai-generate', wrapHandler(aiGenerateHandler));
+app.post('/api/ai-explain', wrapHandler(aiExplainHandler));
+app.post('/api/ai-chat', wrapHandler(aiChatHandler));
 
 const PORT = 3000;
 const HOST = '127.0.0.1'; // Force IPv4
