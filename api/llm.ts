@@ -157,7 +157,8 @@ export const llmChat = async (messages: ChatMessage[], options: LlmOptions = {})
     throw new Error('AI provider returned an empty response');
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('AI request timed out', { cause: error });
+// eslint-disable-next-line preserve-caught-error
+      throw new Error('AI request timed out');
     }
     throw error;
   } finally {
